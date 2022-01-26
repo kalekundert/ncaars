@@ -1,3 +1,14 @@
+# NextFlow
+.nextflow
+.nextflow.log.*
+work
+results
+sandbox
+
+# Rosetta
+molfile_to_params.py
+rosetta_py
+
 # Cookiecutter
 TODO
 cookie
@@ -61,3 +72,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Jupyter
+.ipynb_checkpoints/

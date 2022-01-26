@@ -25,3 +25,13 @@ NCaaRS
 .. image:: https://img.shields.io/github/last-commit/kalekundert/ncaars?logo=github
    :alt: Last commit
    :target: https://github.com/kalekundert/ncaars
+
+Notes
+=====
+- To see logs:
+
+    > conda install eliot-tree
+    > eliot-tree log.json
+
+
+

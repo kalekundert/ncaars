@@ -1,0 +1,10 @@
+dependencies:
+  - rdkit
+  - prody
+  - pandas
+  - docopt
+  - eliot
+  - pip:
+    - byoc
+    - autoprop
+    - tidyexc

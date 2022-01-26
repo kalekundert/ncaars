@@ -1,0 +1,360 @@
+test_config_path:
+  -
+    scaffold: s = Scaffold('.')
+    expected: CWD / 'config.nt'
+  -
+    scaffold: s = Scaffold('mma_pylrs')
+    expected: BUILTIN_SCAFFOLDS / 'mma_pylrs' / 'config.nt'
+
+test_pdb_path:
+  -
+    scaffold: s = Scaffold('.')
+    expected: CWD / 'scaffold.pdb'
+  -
+    scaffold:
+      > s = Scaffold('.')
+      > s.pdb_relpath = 'input.pdb'
+    expected: CWD / 'input.pdb'
+  -
+    scaffold: s = Scaffold('mma_pylrs')
+    expected: BUILTIN_SCAFFOLDS / 'mma_pylrs' / '2zim_relaxed.pdb'
+  -
+    scaffold:
+      > s = Scaffold('.')
+      > s.pdb_relpath = 'input.cif'
+    error:
+      type: ConfigError
+      pattern:
+        - PDB path must have '.pdb' extension
+        - config: .*config\.nt
+        - PDB path: .*input\.cif
+
+test_scorefxn:
+  -
+    files:
+      config.nt:
+        > scaffold:
+        >   scorefxn: xyz
+    expected: xyz
+  -
+    scaffold: s = Scaffold('mma_pylrs')
+    expected: ref2015
+
+test_atoms:
+  -
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: resname ALA
+      scaffold.pdb:
+        > ATOM      1  N   ALA     1      -0.677  -1.230  -0.491  1.00  0.00           N  
+        > ATOM      2  CA  ALA     1      -0.001   0.064  -0.491  1.00  0.00           C  
+        > ATOM      3  C   ALA     1       1.499  -0.110  -0.491  1.00  0.00           C  
+        > ATOM      4  O   ALA     1       2.065  -0.922   0.251  1.00  0.00           O  
+        > ATOM      5  CB  ALA     1      -0.509   0.856   0.727  1.00  0.00           C  
+        > ATOM      6  N   GLY     2       2.212   0.610  -1.288  1.00  0.00           N  
+        > ATOM      7  CA  GLY     2       3.662   0.442  -1.289  1.00  0.00           C  
+        > ATOM      8  C   GLY     2       4.361   1.777  -1.387  1.00  0.00           C  
+        > ATOM      9  O   GLY     2       3.737   2.839  -1.456  1.00  0.00           O  
+    expected_len: 9
+    expected_apo_len: 4
+  -
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: resname GLY
+      scaffold.pdb:
+        > ATOM      1  N   ALA     1      -0.677  -1.230  -0.491  1.00  0.00           N  
+        > ATOM      2  CA  ALA     1      -0.001   0.064  -0.491  1.00  0.00           C  
+        > ATOM      3  C   ALA     1       1.499  -0.110  -0.491  1.00  0.00           C  
+        > ATOM      4  O   ALA     1       2.065  -0.922   0.251  1.00  0.00           O  
+        > ATOM      5  CB  ALA     1      -0.509   0.856   0.727  1.00  0.00           C  
+        > ATOM      6  N   GLY     2       2.212   0.610  -1.288  1.00  0.00           N  
+        > ATOM      7  CA  GLY     2       3.662   0.442  -1.289  1.00  0.00           C  
+        > ATOM      8  C   GLY     2       4.361   1.777  -1.387  1.00  0.00           C  
+        > ATOM      9  O   GLY     2       3.737   2.839  -1.456  1.00  0.00           O  
+    expected_len: 9
+    expected_apo_len: 5
+  -
+    scaffold: s = Scaffold('mma_pylrs')
+    expected_len: 4318
+    expected_apo_len: 4243
+
+test_adenylate_mol_2d:
+  -
+    id: smiles-ethanol
+    files:
+      config.nt:
+        > adenylate:
+        >   smiles: OCC
+    expected:
+      > CCO
+  -
+    id: inchi-ethanol
+    files:
+      config.nt:
+        > adenylate:
+        >   inchi: InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3
+    expected:
+      > CCO
+  -
+    id: pdb-ethanol
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: resname EOH
+      scaffold.pdb:
+        > ATOM      1  C   EOH     1       0.445  -2.202  -5.280  1.00  0.00
+        > ATOM      2  O   EOH     1       1.295  -3.437  -5.310  1.00  0.00
+        > ATOM      3  C1  EOH     1      -0.394  -2.141  -6.522  1.00  0.00
+    pdb_ligands:
+      EOH:
+        InChI_InChI: InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3
+        InChI_version: 1.03
+        InChI_InChIKey: LFQSCWFLJHTTHZ-UHFFFAOYSA-N
+    expected:
+      > CCO
+  -
+    id: mma_pylrs
+    scaffold: s = Scaffold('mma_pylrs')
+    pdb_ligands: download
+    expected:
+      > C[C@@H]1CCN[C@@H]1C(=O)NCCCC[C@H](N)C(=O)OP(=O)([O-])OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O
+  -
+    id: err-overspecified
+    files:
+      config.nt:
+        > adenylate:
+        >   smiles: OCC
+        >   inchi: 1S/C2H6O/c1-2-3/h3H,2H2,1H3
+    error:
+      type: ConfigError
+      message: adenylate specified twice
+  -
+    id: err-bad-smiles
+    files:
+      config.nt:
+        > adenylate:
+        >   smiles: c1
+    error:
+      type: ConfigError
+      message: can't parse SMILES string
+  -
+    id: err-bad-inchi
+    files:
+      # Easy to forget the 'InChI=' prefix:
+      config.nt:
+        > adenylate:
+        >   inchi: 1S/C2H6O/c1-2-3/h3H,2H2,1H3 
+    error:
+      type: ConfigError
+      message: can't parse InChI string
+  -
+    id: err-sele-empty
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: none
+      scaffold.pdb:
+        > ATOM      1  C   EOH     1       0.445  -2.202  -5.280  1.00  0.00
+        > ATOM      2  O   EOH     1       1.295  -3.437  -5.310  1.00  0.00
+        > ATOM      3  C1  EOH     1      -0.394  -2.141  -6.522  1.00  0.00
+    error:
+      type: ConfigError
+      pattern:
+        - adenylate selection is empty
+        - PDB path: .*scaffold\.pdb
+        - selection: none
+  -
+    id: err-sele-multiple
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: all
+      scaffold.pdb:
+        > ATOM      1  N   ALA     1      -0.677  -1.230  -0.491  1.00  0.00           N  
+        > ATOM      2  CA  ALA     1      -0.001   0.064  -0.491  1.00  0.00           C  
+        > ATOM      3  C   ALA     1       1.499  -0.110  -0.491  1.00  0.00           C  
+        > ATOM      4  O   ALA     1       2.065  -0.922   0.251  1.00  0.00           O  
+        > ATOM      5  CB  ALA     1      -0.509   0.856   0.727  1.00  0.00           C  
+        > ATOM      6  N   GLY     2       2.212   0.610  -1.288  1.00  0.00           N  
+        > ATOM      7  CA  GLY     2       3.662   0.442  -1.289  1.00  0.00           C  
+        > ATOM      8  C   GLY     2       4.361   1.777  -1.387  1.00  0.00           C  
+        > ATOM      9  O   GLY     2       3.737   2.839  -1.456  1.00  0.00           O  
+    error:
+      type: ConfigError
+      pattern:
+        - adenylate selection matches multiple residues
+        - PDB path: .*scaffold\.pdb
+        - selection: all
+        - matching residues: ALA, GLY
+  -
+    id: err-unknown-resn
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: all
+      scaffold.pdb:
+        > ATOM      1  C   EOH     1       0.445  -2.202  -5.280  1.00  0.00
+        > ATOM      2  O   EOH     1       1.295  -3.437  -5.310  1.00  0.00
+        > ATOM      3  C1  EOH     1      -0.394  -2.141  -6.522  1.00  0.00
+    pdb_ligands:
+      {}
+    error:
+      type: ConfigError
+      pattern:
+        - unknown adenylate residue
+        - queried PDB ligand database for 'EOH': not found
+  -
+    id: err-pdb-no-inchi
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: all
+      scaffold.pdb:
+        > ATOM      1  C   EOH     1       0.445  -2.202  -5.280  1.00  0.00
+        > ATOM      2  O   EOH     1       1.295  -3.437  -5.310  1.00  0.00
+        > ATOM      3  C1  EOH     1      -0.394  -2.141  -6.522  1.00  0.00
+    # I don't know if it's even possible for ligands in the PDB database to not 
+    # have InChI strings, but better safe than sorry.
+    pdb_ligands:
+      EOH:
+        {}
+    error:
+      type: ConfigError
+      pattern:
+        - unknown adenylate 2D chemical structure
+        - PDB path: .*scaffold\.pdb
+        - selection: all
+        - queried PDB ligand database for 'EOH':
+        - residue: found
+        - InChI string: not found
+  -
+    id: err-pdb-bad-inchi
+    files:
+      config.nt:
+        > adenylate:
+        >   sele: all
+      scaffold.pdb:
+        > ATOM      1  C   EOH     1       0.445  -2.202  -5.280  1.00  0.00
+        > ATOM      2  O   EOH     1       1.295  -3.437  -5.310  1.00  0.00
+        > ATOM      3  C1  EOH     1      -0.394  -2.141  -6.522  1.00  0.00
+    # I don't know if it's even possible for ligands in the PDB database to 
+    # have invalid InChI strings, but better safe than sorry.
+    pdb_ligands:
+      EOH:
+        # Taken from the 'err-bad-inchi' test above.
+        InChI_InChI: 1S/C2H6O/c1-2-3/h3H,2H2,1H3
+    error:
+      type: ConfigError
+      pattern:
+        - can't parse InChI string: 1S/C2H6O/c1-2-3/h3H,2H2,1H3
+        - PDB path: .*scaffold\.pdb
+        - selection: all
+        - downloaded the above string from PDB ligand database for 'EOH'
+
+test_adenylate_mol_3d:
+  -
+    id: ethane
+    files:
+      scaffold.pdb:
+        > ATOM      1  C   ETH A           0.000   0.000   0.000
+        > ATOM      2  C   ETH A           1.500   0.000   0.000
+      config.nt:
+        > adenylate:
+        >   sele: all
+        >   smiles: CC
+    expected:
+      smiles: CC
+      coords:
+        - (0, 0, 0)
+        - (1.5, 0, 0)
+  -
+    id: ethylene
+    files:
+      scaffold.pdb:
+        > ATOM      1  C   ETH A           0.000   0.000   0.000
+        > ATOM      2  C   ETH A           1.500   0.000   0.000
+      config.nt:
+        > adenylate:
+        >   sele: all
+        >   smiles: C=C
+    expected:
+      smiles: C=C
+      coords:
+        - (0, 0, 0)
+        - (1.5, 0, 0)
+  -
+    id: chain-a
+    files:
+      scaffold.pdb:
+        > ATOM      1  C   ETH A           0.000   0.000   0.000
+        > ATOM      2  C   ETH A           1.500   0.000   0.000
+        > ATOM      3  C   ETH B           5.000   0.000   0.000
+        > ATOM      4  C   ETH B           6.500   0.000   0.000
+      config.nt:
+        > adenylate:
+        >   sele: chain A
+        >   smiles: CC
+    expected:
+      smiles: CC
+      coords:
+        - (0, 0, 0)
+        - (1.5, 0, 0)
+  -
+    id: chain-b
+    files:
+      scaffold.pdb:
+        > ATOM      1  C   ETH A           0.000   0.000   0.000
+        > ATOM      2  C   ETH A           1.500   0.000   0.000
+        > ATOM      3  C   ETH B           5.000   0.000   0.000
+        > ATOM      4  C   ETH B           6.500   0.000   0.000
+      config.nt:
+        > adenylate:
+        >   sele: chain B
+        >   smiles: CC
+    expected:
+      smiles: CC
+      coords:
+        - (5, 0, 0)
+        - (6.5, 0, 0)
+  -
+    id: resn-1
+    files:
+      scaffold.pdb:
+        > ATOM      1  C   ET1 A           0.000   0.000   0.000
+        > ATOM      2  C   ET1 A           1.500   0.000   0.000
+        > ATOM      3  C   ET2 A           5.000   0.000   0.000
+        > ATOM      4  C   ET2 A           6.500   0.000   0.000
+      config.nt:
+        > adenylate:
+        >   sele: resname ET1
+        >   smiles: CC
+    expected:
+      smiles: CC
+      coords:
+        - (0, 0, 0)
+        - (1.5, 0, 0)
+  -
+    id: resn-2
+    files:
+      scaffold.pdb:
+        > ATOM      1  C   ET1 A           0.000   0.000   0.000
+        > ATOM      2  C   ET1 A           1.500   0.000   0.000
+        > ATOM      3  C   ET2 A           5.000   0.000   0.000
+        > ATOM      4  C   ET2 A           6.500   0.000   0.000
+      config.nt:
+        > adenylate:
+        >   sele: resname ET2
+        >   smiles: CC
+    expected:
+      smiles: CC
+      coords:
+        - (5, 0, 0)
+        - (6.5, 0, 0)
+  -
+    id: mma_pylrs
+    scaffold: s = Scaffold('mma_pylrs')
+    expected:
+      smiles:
+        > C[C@@H]1CCN[C@@H]1C(=O)NCCCC[C@H](N)C(=O)OP(=O)([O-])OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O

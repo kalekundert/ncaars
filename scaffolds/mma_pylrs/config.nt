@@ -1,0 +1,18 @@
+scaffold:
+  pdb: 2zim_relaxed.pdb
+  scorefxn: ref2015
+
+adenylate:
+  sele: resname YLY
+
+  # The InChI string in the PDB ligand database has several errors, which force 
+  # me to provide my own:
+  # - The amide in the sidechain is replaced by the imidic acid tautomer.
+  # - The chiralities of the 3'- and α- carbons are wrong.
+  # - The phosphate oxygen is protonated.  According to wikipedia, AMP has 3 
+  #   pKas: 0.9, 3.8, and 6.1.  Assuming that these refer to the 3 phosphate 
+  #   protons, the proton is question would usually be absent at pH=7.
+  smiles: C[C@@H]1CCN[C@@H]1C(=O)NCCCC[C@H](N)C(=O)OP(=O)([O-])OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O
+
+  anchor_smarts: c1nc2c(N)ncnc2n1C3CCC(O3)COPOC(=O)
+  pocket_smarts: CCCCNC(=O)C1NCCC1C
