@@ -68,7 +68,7 @@ mock_alignment_from_attrs.index_schema = {
         'anchor_indices': {Coerce(int): Coerce(int)},
         'anchor_coords': {Coerce(int): with_py.eval},
         'pocket_indices': [Coerce(int)],
-        'ref_pocket_indices': [Coerce(int)],
+        'ref_pocket_indices': {Coerce(int): with_py.eval},
 }
 mock_alignment_from_attrs.schema = {
         Optional('mol'): str,
@@ -151,13 +151,16 @@ def test_generate_conformers_etkdg(alignment, num_confs, positions, chiral_cente
     mol_diff = mnce.generate_conformers_etkdg(
         alignment,
         num_confs=num_confs,
-        random_seed=2,
+        random_seed=2**16,
     )
-    for i in range(num_confs):
+    conf_ids_same = [x.GetId() for x in mol_same.GetConformers()]
+    conf_ids_diff = [x.GetId() for x in mol_diff.GetConformers()]
+
+    for i_same, i_diff in zip(conf_ids_same, conf_ids_diff):
         for j in alignment.pocket_indices:
-            p = mol.GetConformer(i).GetAtomPosition(j)
-            ps = mol_same.GetConformer(i).GetAtomPosition(j)
-            pd = mol_diff.GetConformer(i).GetAtomPosition(j)
+            p = mol.GetConformer(i_same).GetAtomPosition(j)
+            ps = mol_same.GetConformer(i_same).GetAtomPosition(j)
+            pd = mol_diff.GetConformer(i_diff).GetAtomPosition(j)
             assert tuple_from_point(p) == approx(tuple_from_point(ps))
             assert tuple_from_point(p) != approx(tuple_from_point(pd))
 
@@ -198,27 +201,33 @@ def test_restrain_anchor_atoms(alignment, bounds, tol, expected):
 @parametrize_from_file(
         schema=Schema({
             'alignment': alignment_from_mols.schema,
-            'bounds': np.genfromtxt,
-            'tol': Coerce(float),
-            'expected': np.genfromtxt,
+            'mol': str,
+            Optional('kwargs', default={}): with_py.eval,
+            'expected': with_py.eval,
         }),
 )
-def test_restrain_pocket_atoms(alignment, bounds, tol, expected):
+def test_any_anchor_atoms_misplaced(alignment, mol, kwargs, expected):
     alignment = alignment_from_mols(alignment)
-    mnce.restrain_pocket_atoms(alignment, bounds, tol=tol)
-    assert bounds == approx(expected)
+    mol = Chem.MolFromMolBlock(mol)
+    conf = mol.GetConformer()
+    actual = mnce.any_anchor_atoms_misplaced(alignment, conf, **kwargs)
+    assert actual == expected
 
 @parametrize_from_file(
         schema=Schema({
             'alignment': alignment_from_mols.schema,
-            'expected': with_math.eval,
+            'mol': str,
+            Optional('kwargs', default={}): with_py.eval,
+            'expected': with_py.eval,
         }),
 )
-def test_calc_pocket_dists(alignment, expected):
+def test_any_pocket_atoms_misplaced(alignment, mol, kwargs, expected):
     alignment = alignment_from_mols(alignment)
-    df = mnce.calc_pocket_dists(alignment)
-    expected = unordered(approx(x) for x in expected)
-    assert df.to_dict('records') == expected
+    mol = Chem.MolFromMolBlock(mol)
+    conf = mol.GetConformer()
+    actual = mnce.any_pocket_atoms_misplaced(alignment, conf, **kwargs)
+    assert actual == expected
+
 
 def points_from_tuples(d):
     return {k: Geometry.Point3D(*v) for k, v in d.items()}

@@ -191,7 +191,8 @@ test_substrate_alignment:
         [2, 3]
 
       ref_pocket_indices:
-        [2, 3]
+        2: {2}
+        3: {3}
   -
     id: extra-atoms-mol
 
@@ -259,7 +260,73 @@ test_substrate_alignment:
         [2, 3, 4, 5, 6]
 
       ref_pocket_indices:
-        [2, 3]
+        2: {2}
+        3: {3}
+  -
+    id: branch-mol
+
+    alignment:
+      mol: N[C@@H](C(C)O)C(O)=O
+      #    0 1     2 3 4 5 6  7
+
+      # I downloded these coordinates from the given URL, then I rearranged the 
+      # atoms to match the order in the SMILES string above.
+      ref:
+        > serine
+        >
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   7  6  0  0  0  0  0  0  0  0999 V2000
+        >    -0.7059    1.9765    1.2189 N   0  0  0  0  0
+        >    -0.0184    1.5028    0.0103 C   0  0  0  0  0
+        >     1.4170    2.0324   -0.0006 C   0  0  0  0  0
+        >     1.3983    3.4570   -0.1102 O   0  0  0  0  0
+        >     0.0021   -0.0041    0.0020 C   0  0  0  0  0
+        >     0.2021   -0.6662   -1.1483 O   0  0  0  0  0
+        >    -0.1616   -0.6161    1.0308 O   0  0  0  0  0
+        >   1  2  1  0  0  0  0
+        >   2  3  1  0  0  0  0
+        >   3  4  1  0  0  0  0
+        >   2  5  1  0  0  0  0
+        >   5  6  1  0  0  0  0
+        >   5  7  2  0  0  0  0
+        > M  END
+        > $$$$
+
+      anchor: NCC(O)=O
+      pocket: [C;!$(C(=O)O)]O
+
+    # Atom  Mol  Ref
+    # ──────────────
+    # N       0  0/1
+    # Cα      1  1/2
+    # Cβ      2  2/3
+    # Cγ      3
+    # Oγ      4  3/4
+    # C       5  4/5
+    # O1      6  5/6
+    # O2      7  6/7
+
+    expected:
+      anchor_indices:
+        0: 0
+        1: 1
+        5: 4
+        6: 5
+        7: 6
+
+      anchor_coords:
+        0: -0.7059,  1.9765,  1.2189
+        1: -0.0184,  1.5028,  0.0103
+        5:  0.0021, -0.0041,  0.0020
+        6:  0.2021, -0.6662, -1.1483
+        7: -0.1616, -0.6161,  1.0308
+
+      pocket_indices:
+        [2, 3, 4]
+
+      ref_pocket_indices:
+        2: {2}
+        3: {3, 4}
   -
     id: atom-order-mol
 
@@ -321,7 +388,8 @@ test_substrate_alignment:
         [0, 6]
 
       ref_pocket_indices:
-        [2, 3]
+        2: {0}
+        3: {6}
   -
     id: atom-order-ref
 
@@ -384,7 +452,8 @@ test_substrate_alignment:
         [2, 3]
 
       ref_pocket_indices:
-        [2, 6]
+        2: {2}
+        6: {3}
   -
     id: atom-order-anchor
 
@@ -447,7 +516,8 @@ test_substrate_alignment:
         [2, 3]
 
       ref_pocket_indices:
-        [2, 3]
+        2: {2}
+        3: {3}
   -
     id: err-anchor-not-found-mol
 
@@ -617,18 +687,19 @@ test_restrain_anchor_atoms:
       - 2 0 7
       - 0 0 0
 
-test_restrain_pocket_atoms:
+test_any_anchor_atoms_misplaced:
   -
-    id: base
+    id: identical
+
     alignment:
       mol: CO
       ref:
-        > line
+        > methanol
         >
-        >
+        > modified from: https://tinyurl.com/p9hr9xp8
         >   2  1  0  0  0  0  0  0  0  0999 V2000
         >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    2.0000    0.0000 O   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
         >   1  2  1  0  0  0  0
         > M  END
         > $$$$
@@ -636,86 +707,30 @@ test_restrain_pocket_atoms:
       anchor: C
       pocket: O
 
-    bounds:
-      - 0 7
-      - 0 0
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
 
-    tol: 1
-
-    expected:
-      - 0 3
-      - 1 0
+    expected: False
   -
-    id: isodistant-pocket-atoms
-    alignment:
-      mol: OCO
-      ref:
-        > line
-        >
-        >
-        >   2  1  0  0  0  0  0  0  0  0999 V2000
-        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    2.0000    0.0000 O   0  0  0  0  0
-        >   1  2  1  0  0  0  0
-        > M  END
-        > $$$$
+    id: barely-ok
 
-      anchor: C
-      pocket: O
-
-    bounds:
-      - 0 7 7
-      - 0 0 7
-      - 0 0 0
-
-    tol: 1
-
-    expected:
-      - 0 3 7
-      - 1 0 3
-      - 0 1 0
-  -
-    id: unrestrained-pocket-atoms
-    alignment:
-      mol: NCO
-      ref:
-        > line
-        >
-        >
-        >   2  1  0  0  0  0  0  0  0  0999 V2000
-        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    2.0000    0.0000 O   0  0  0  0  0
-        >   1  2  1  0  0  0  0
-        > M  END
-        > $$$$
-
-      anchor: O
-      pocket: C
-
-    bounds:
-      - 0 7 7
-      - 0 0 7
-      - 0 0 0
-
-    tol: 1
-
-    expected:
-      - 0 7 7
-      - 0 0 3
-      - 0 1 0
-
-test_calc_pocket_dists:
-  -
-    id: base
     alignment:
       mol: CO
       ref:
-        > line
+        > methanol
         >
-        >
+        > modified from: https://tinyurl.com/p9hr9xp8
         >   2  1  0  0  0  0  0  0  0  0999 V2000
         >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    1.0000    0.0000 O   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
         >   1  2  1  0  0  0  0
         > M  END
         > $$$$
@@ -723,150 +738,254 @@ test_calc_pocket_dists:
       anchor: C
       pocket: O
 
-    expected:
-      -
-        mol_anchor_i: 0
-        ref_anchor_i: 0
-        ref_pocket_i: 1
-        dist_topo: 1
-        dist_3d: 1
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.4999    0.0000    0.0000 C   0  0  0  0  0
+      >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    kwargs:
+      tol: 0.5
+
+    expected: False
   -
-    id: multiple-anchor-atoms
+    id: barely-misplaced
+
     alignment:
-      mol: CCO
+      mol: CO
       ref:
-        > triangle
+        > methanol
         >
-        >
-        >   3  2  0  0  0  0  0  0  0  0999 V2000
-        >     3.0000    0.0000    0.0000 C   0  0  0  0  0
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
         >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    4.0000    0.0000 O   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
         >   1  2  1  0  0  0  0
-        >   2  3  1  0  0  0  0
         > M  END
         > $$$$
 
-      anchor: CC
+      anchor: C
       pocket: O
 
-    expected:
-      -
-        mol_anchor_i: 0
-        ref_anchor_i: 0
-        ref_pocket_i: 2
-        dist_topo: 2
-        dist_3d: 5
-      -
-        mol_anchor_i: 1
-        ref_anchor_i: 1
-        ref_pocket_i: 2
-        dist_topo: 1
-        dist_3d: 4
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.5001    0.0000    0.0000 C   0  0  0  0  0
+      >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    kwargs:
+      tol: 0.5
+
+    expected: True
   -
-    id: multiple-pocket-atoms
+    id: ignore-pocket
+
     alignment:
-      mol: CCO
+      mol: CO
       ref:
-        > triangle
+        > methanol
         >
-        >
-        >   3  2  0  0  0  0  0  0  0  0999 V2000
-        >     3.0000    0.0000    0.0000 C   0  0  0  0  0
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
         >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    4.0000    0.0000 O   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
         >   1  2  1  0  0  0  0
-        >   2  3  1  0  0  0  0
         > M  END
         > $$$$
 
-      anchor: O
-      pocket: CC
-
-    expected:
-      -
-        mol_anchor_i: 2
-        ref_anchor_i: 2
-        ref_pocket_i: 0
-        dist_topo: 2
-        dist_3d: 5
-      -
-        mol_anchor_i: 2
-        ref_anchor_i: 2
-        ref_pocket_i: 1
-        dist_topo: 1
-        dist_3d: 4
-  -
-    id: atom-order
-    alignment:
-      mol: C(O)N
-      ref:
-        > triangle
-        >
-        >
-        >   3  2  0  0  0  0  0  0  0  0999 V2000
-        >     3.0000    0.0000    0.0000 N   0  0  0  0  0
-        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    4.0000    0.0000 O   0  0  0  0  0
-        >   1  2  1  0  0  0  0
-        >   2  3  1  0  0  0  0
-        > M  END
-        > $$$$
-
-      anchor: NC
+      anchor: C
       pocket: O
 
-    expected:
-      -
-        mol_anchor_i: 2
-        ref_anchor_i: 0
-        ref_pocket_i: 2
-        dist_topo: 2
-        dist_3d: 5
-      -
-        mol_anchor_i: 0
-        ref_anchor_i: 1
-        ref_pocket_i: 2
-        dist_topo: 1
-        dist_3d: 4
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     2.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    kwargs:
+      tol: 0.5
+
+    expected: False
+
+test_any_pocket_atoms_misplaced:
   -
-    id: branched
+    id: identical
+
     alignment:
-      mol: C(C)(C)O
+      mol: CO
       ref:
-        > branched
+        > methanol
         >
-        >
-        >   4  3  0  0  0  0  0  0  0  0999 V2000
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
         >     0.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     1.0000    0.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    1.0000    0.0000 C   0  0  0  0  0
-        >     0.0000    0.0000    1.0000 O   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
         >   1  2  1  0  0  0  0
-        >   1  3  1  0  0  0  0
-        >   1  4  1  0  0  0  0
         > M  END
         > $$$$
 
-      anchor: O
-      pocket: CCC
+      anchor: C
+      pocket: O
 
-    expected:
-      -
-        mol_anchor_i: 3
-        ref_anchor_i: 3
-        ref_pocket_i: 0
-        dist_topo: 1
-        dist_3d: 1
-      -
-        mol_anchor_i: 3
-        ref_anchor_i: 3
-        ref_pocket_i: 1
-        dist_topo: 2
-        dist_3d: sqrt(2)
-      -
-        mol_anchor_i: 3
-        ref_anchor_i: 3
-        ref_pocket_i: 2
-        dist_topo: 2
-        dist_3d: sqrt(2)
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    expected: False
+  -
+    id: barely-ok
+
+    alignment:
+      mol: CO
+      ref:
+        > methanol
+        >
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
+        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+        >   1  2  1  0  0  0  0
+        > M  END
+        > $$$$
+
+      anchor: C
+      pocket: O
+
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     3.9999    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    kwargs:
+      tol: 3.0
+
+    expected: False
+  -
+    id: barely-misplaced
+
+    alignment:
+      mol: CO
+      ref:
+        > methanol
+        >
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
+        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+        >   1  2  1  0  0  0  0
+        > M  END
+        > $$$$
+
+      anchor: C
+      pocket: O
+
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     4.0001    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    kwargs:
+      tol: 3.0
+
+    expected: True
+  -
+    id: one-atom-ok
+
+    alignment:
+      mol: CO
+      ref:
+        > methanol
+        >
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
+        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+        >   1  2  1  0  0  0  0
+        > M  END
+        > $$$$
+
+      anchor: C
+      pocket: O
+
+    mol:
+      > methanediol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   3  2  0  0  0  0  0  0  0  0999 V2000
+      >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+      >    -3.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      >   1  3  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    expected: False
+  -
+    id: ignore-anchor
+
+    alignment:
+      mol: CO
+      ref:
+        > methanol
+        >
+        > modified from: https://tinyurl.com/p9hr9xp8
+        >   2  1  0  0  0  0  0  0  0  0999 V2000
+        >     0.0000    0.0000    0.0000 C   0  0  0  0  0
+        >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+        >   1  2  1  0  0  0  0
+        > M  END
+        > $$$$
+
+      anchor: C
+      pocket: O
+
+    mol:
+      > methanol
+      >
+      > modified from: https://tinyurl.com/p9hr9xp8
+      >   2  1  0  0  0  0  0  0  0  0999 V2000
+      >    -4.0000    0.0000    0.0000 C   0  0  0  0  0
+      >     1.0000    0.0000    0.0000 O   0  0  0  0  0
+      >   1  2  1  0  0  0  0
+      > M  END
+      > $$$$
+
+    kwargs:
+      tol: 3.0
+
+    expected: False
