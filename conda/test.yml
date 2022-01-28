@@ -1,10 +1,13 @@
 dependencies:
   - rdkit
   - prody
+  - numpy
   - docopt
   - eliot
   - pip
+  - pytest
   - pip:
     - byoc
     - autoprop
     - tidyexc
+    - parametrize_from_file

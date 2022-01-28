@@ -111,7 +111,6 @@ class Scaffold:
             err.brief = "adenylate selection is empty"
             err.info += "PDB path: {scaffold.pdb_path}"
             err.info += "selection: {sele}"
-            pprint(err.data)
             raise err
 
         return atoms_sele.toAtomGroup()

@@ -11,7 +11,6 @@ from voluptuous import Schema, Optional, Coerce
 from parametrize_from_file import star
 from parametrize_from_file.voluptuous import Namespace
 from pytest import approx
-from pytest_unordered import unordered
 
 with_py = Namespace()
 with_mnce = Namespace(star(mnce))
