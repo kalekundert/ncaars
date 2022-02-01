@@ -49,7 +49,6 @@ References:
 import sys
 import tidyexc
 import numpy as np
-import pandas as pd
 
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem
