@@ -1,5 +1,6 @@
 # NextFlow
 .nextflow
+.nextflow.pid
 .nextflow.log.*
 work
 results

@@ -1,0 +1,79 @@
+<ROSETTASCRIPTS>
+    <SCOREFXNS>
+        <ScoreFunction name="sfxn" weights="%%scorefxn%%"/>
+    </SCOREFXNS>
+
+    <TASKOPERATIONS>
+        <IncludeCurrent name="current"/>
+        <SetIGType name="linmem_ig" lin_mem_ig="1"/>
+        <LimitAromaChi2 name="limitchi2" />
+        <ProteinLigandInterfaceUpweighter name="up" interface_weight="1.2"/>
+        <ReadResfile name="resfile" filename="%%resfile_path%%"/>
+        <RestrictToRepacking name="no_design"/>
+    </TASKOPERATIONS>
+
+    <RESIDUE_SELECTORS>
+        <ClashBasedShell name="move" task_operations="resfile" scorefxn="sfxn"/>
+        <Not name="freeze" selector="move"/>
+    </RESIDUE_SELECTORS>
+
+    <TASKOPERATIONS>
+        <OperateOnResidueSubset name="repack_shell" selector="freeze">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+    </TASKOPERATIONS>
+
+    <MOVE_MAP_FACTORIES>
+        <MoveMapFactory name="min_shell" bb="0" chi="0" jumps="0">
+            <Backbone residue_selector="move"/>
+            <Chi residue_selector="move"/>
+        </MoveMapFactory>
+    </MOVE_MAP_FACTORIES>
+
+    <FILTERS>
+        <!-- Removed the holes filter from Beyer2020, because it's not used and 
+             has dependencies that would complicate installation. -->
+        <PackStat name="pack" threshold="0.6" confidence="0"/>
+        <BuriedUnsatHbonds name="uhb" cutoff="1000" scorefxn="sfxn" jump_number="1"/>
+        <LigInterfaceEnergy name="lig_ife" scorefxn="sfxn" jump_number="1" energy_cutoff="500"/>
+        <PackStat name="pstat" chain="0" threshold="0.0"/>
+        <DSasa name="dsasa" lower_threshold="0.8" confidence="0"/>
+        <ShapeComplementarity name="sc" min_sc="0.5" jump="1" confidence="0"/>
+        <HbondsToResidue name="lig_hbond" scorefxn="sfxn" partners="0" backbone="true" bb_bb="true" sidechain="true" residue="1X" from_other_chains="true" from_same_chain="false"/>
+    </FILTERS>
+
+    <MOVERS>
+        <FastRelax
+            name="relax"
+            task_operations="up,current,limitchi2,repack_shell,no_design"
+            movemap_factory="min_shell"
+            scorefxn="sfxn"
+            repeats="3"
+        />
+        <GreedyOptMutationMover
+            name="gopt"
+            task_operations="resfile"
+            relax_mover="relax"
+            scorefxn="sfxn"
+            dump_table="1"
+            repack_shell="10.0"
+        >
+            <Filters>
+                <AND filter_name="lig_ife" sample_type="low"/>
+                <AND filter_name="sc" sample_type="high"/>
+            </Filters>
+        </GreedyOptMutationMover>
+    </MOVERS>
+
+    <PROTOCOLS>
+        <Add mover="gopt"/>
+        <Add filter="sc"/>
+        <Add filter="lig_ife"/>
+        <Add filter="pstat"/>
+        <Add filter="dsasa"/>
+        <Add filter="uhb"/>
+        <Add filter="lig_hbond"/>
+   </PROTOCOLS>
+
+</ROSETTASCRIPTS>
+

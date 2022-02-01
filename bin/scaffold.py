@@ -55,6 +55,9 @@ class Scaffold:
     scorefxn = byoc.param(
             ('scaffold', 'scorefxn'),
     )
+    resfile_relpath = byoc.param(
+            ('scaffold', 'resfile'),
+    )
     adenylate_sele = byoc.param(
             ('adenylate', 'sele'),
     )
@@ -94,6 +97,9 @@ class Scaffold:
             raise err
 
         return pdb_path
+
+    def get_resfile_path(self):
+        return self._root / self.resfile_relpath
 
     def get_atoms(self):
         return prody.parsePDB(self.pdb_path)

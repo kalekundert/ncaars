@@ -1,6 +1,7 @@
 scaffold:
-  pdb: 2zim_relaxed.pdb
+  pdb: 2zim_relaxed_renumbered.pdb
   scorefxn: ref2015
+  resfile: resfile
 
 adenylate:
   sele: resname YLY

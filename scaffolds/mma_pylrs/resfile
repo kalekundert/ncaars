@@ -1,0 +1,22 @@
+# THIS RESFILE IS JUST A PLACEHOLDER
+#
+# These positions are just a subset of the residues within a 4Å shell of the 
+# pyrrolysine sidechain in 2ZIM.  I didn't use any knowledge of which residues 
+# are known to be designable, and I didn't consider which positions would be 
+# clonable.
+
+NATAA
+START
+
+108 A ALLAA
+111 A ALLAA
+112 A ALLAA
+115 A ALLAA
+150 A ALLAA
+152 A ALLAA
+154 A ALLAA
+190 A ALLAA
+205 A ALLAA
+223 A ALLAA
+225 A ALLAA
+227 A ALLAA

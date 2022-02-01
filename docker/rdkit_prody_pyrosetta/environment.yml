@@ -1,0 +1,11 @@
+dependencies:
+  - rdkit
+  - prody
+  - pyrosetta
+  - docopt
+  - eliot
+  - pip
+  - pip:
+    - byoc
+    - autoprop
+    - tidyexc
