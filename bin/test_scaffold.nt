@@ -17,7 +17,7 @@ test_pdb_path:
     expected: CWD / 'input.pdb'
   -
     scaffold: s = Scaffold('mma_pylrs')
-    expected: BUILTIN_SCAFFOLDS / 'mma_pylrs' / '2zim_relaxed.pdb'
+    expected: BUILTIN_SCAFFOLDS / 'mma_pylrs' / '2zim_relaxed_renumbered.pdb'
   -
     scaffold:
       > s = Scaffold('.')
