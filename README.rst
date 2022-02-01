@@ -63,6 +63,23 @@ Custom scaffolds
 
   - Describe the adenylate ligand in the config file.
 
+  - Create a PSSM:
+
+    - Used by design algorithms to bias towards stable sequences.
+
+    - Don't provide an automatic script for this, because it requires the BLAST 
+      database (specifically nr).  This is far too big to include in a docker 
+      container, and unnecessary since most institutions already make the BLAST 
+      databases available somehow.  So I'll just give the command here::
+
+        psiblast \
+            -db nr_v5 \
+            -query 2zim.fasta \
+            -out_ascii_pssm 2zim.pssm \
+            -num_iterations 4 \
+            -num_alignments 1 \
+            -num_threads 8 \
+      
 Custom design algorithms
 ------------------------
 - Implement a `--dry-run` option; it's very useful for development.
