@@ -24,6 +24,9 @@ params.coupled_moves_ligand_weight = 1
 params.coupled_moves_bb_mover = 'backrub'
 
 process make_ncaa_conformers_etkdg() {
+    cpus 1
+    memory '2GB'
+    time '4h'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
@@ -42,6 +45,9 @@ process make_ncaa_conformers_etkdg() {
 }
 
 process molfile_to_params {
+    cpus 1
+    memory '1GB'
+    time '30m'
     label 'molfile_to_params'
     publishDir params.out, mode: 'rellink'
 
@@ -64,6 +70,9 @@ process molfile_to_params {
 }
 
 process copy_ncaa_into_scaffold {
+    cpus 1
+    memory '1GB'
+    time '30m'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
@@ -80,6 +89,9 @@ process copy_ncaa_into_scaffold {
 }
 
 process design_fast_relax {
+    cpus 1
+    memory '2GB'
+    time '4h'
     label 'pyrosetta'
     publishDir "${params.out}/fast_relax", mode: 'rellink'
 
@@ -104,6 +116,9 @@ process design_fast_relax {
 }
 
 process design_coupled_moves {
+    cpus 1
+    memory '2GB'
+    time '4h'
     label 'pyrosetta'
     publishDir "${params.out}/coupled_moves", mode: 'rellink'
 
@@ -132,6 +147,9 @@ process design_coupled_moves {
 }
 
 process design_greedyopt {
+    cpus 1
+    memory '2GB'
+    time '24h'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
