@@ -22,15 +22,49 @@ Notes
 
 Installing the pipeline
 -----------------------
-- Either docker or conda are required.
+- Install nextflow
+
+  - This is preinstalled on many clusters.
+
+- Either docker or conda are required.  Docker is preferred:
 
   - Docker:
 
-    - You must build the docker images yourself, because the build process 
-      requires access to the rosetta source code and the pyrosetta conda 
-      channel (both proprietary).
+    You must build the docker images yourself, because the build process 
+    requires access to the rosetta source code and the pyrosetta conda channel 
+    (both proprietary).  Here's an outline of the process:
 
-    - Scripts to build the images are found in the docker directory.
+    - Get access to the Rosetta source code:
+
+      - If you are a developer, just configure git to be able clone the main 
+        Rosetta repository without needing to provide any passwords (e.g.  
+        upload your SSH key to GitHub)
+
+      - If you are not a developer: get a Rosetta license, download the source 
+        code, and move it into the ``docker/molfile_to_params/rosetta`` 
+        directory.  The following path should exist::
+          
+          docker/molfile_to_params/rosetta/source/scripts/python/public/molfile_to_params.py
+
+    - Get access to the PyRosetta conda channel::
+        
+        https://<user>:<pass>@conda.graylab.jhu.edu
+
+    - Build all images from scratch::
+
+        $ cd docker
+        $ PYROSETTA_CONDA_CHANNEL=... make
+
+    - Many cluster systems require singularity containers, instead of docker 
+      containers.  You can create these as follows::
+
+        $ make sif
+
+      - Note that the ``ncaars_rdkit_prody_pyrosetta`` image is very big (6 
+        GB).  If your ``/tmp`` is not big enough, you may need to specify a 
+        different temporary directory like so::
+
+          SINGULARITY_TMPDIR=/home/kale make sif
 
   - Conda:
 
@@ -38,12 +72,54 @@ Installing the pipeline
       conda package.  It does nothing for the amount of time specified by 
       `conda.createTimeout`, prints a stack traces, then continues to hang 
       indefinitely.
+
     - If you want to use conda (e.g. if docker is unavailable), you can get 
       around this by creating your own environments using the files in the 
       conda directory, and configuring nextflow to use those.
 
 Running the pipeline
 --------------------
+- Make a ``nextflow.config`` file:
+
+  - Specify which NCAA you want to design for::
+
+      params.ncaa = '...'  // SMILES
+
+  - Specify which aaRS scaffold you want to use::
+
+      params.scaffold = 'mma_pylrs'
+
+    There are two built-in scaffolds you can use: ``mma_pylrs`` and 
+    ``mja_tyrrs``.  The following section describes how to create a custom 
+    scaffold.
+      
+  - Tell nextflow which containers/conda environments to use:
+
+    - Each process is labeled either "pyrosetta" or "molfile_to_params", 
+      indicating which environment is needed.
+
+    - Use these labels to provide the appropriate container names for your      
+      installation::
+
+        process {
+          withLabel: pyrosetta {
+            container = 'ncaars-rdkit-prody-pyrosetta:latest'
+          }
+          withLabel: molfile_to_params {
+            container = 'ncaars-molfile-to-params:v2021.49-dev61812'
+          }
+        }
+
+- Run nextflow::
+
+    $ nextflow kalekundert/main.nf
+
+  There is no need to actually download this repository to run the pipeline.  
+  The above command will instruct nextflow to automatically download and run 
+  the pipeline.  However, if you have the repository downloaded anyways (e.g.  
+  to build the docker images), you can also give the path to the ``main.nf`` 
+  script.
+
 - To see logs from conformer-generation steps:
 
     > conda install eliot-tree
@@ -51,36 +127,69 @@ Running the pipeline
 
 Custom scaffolds
 ----------------
-- Have to do this by hand.
-- The basic steps:
+Preparing a custom scaffold for this pipeline takes a lot of setup work, and 
+most of it has to be done by hand.  Below is an outline of the basic steps:
 
-  - Get a PDB model of the scaffold with a ligand bound.
-  - Relax the model in a rosetta score function, e.g. ref2015.
+- Get a PDB model of the scaffold with a ligand bound.
 
-    - I use kalekundert/rosetta_relax_b for this purpose.
-    - I recommend renumbering the residues in the scaffold to count from 1 
-      before this step.
+- Relax the model in a rosetta score function, e.g. ref2015.
 
-  - Describe the adenylate ligand in the config file.
+  - I use kalekundert/rosetta_relax_b for this purpose.
+  - I recommend renumbering the residues in the scaffold to count from 1 
+    before this step.
 
-  - Create a PSSM:
+- Describe the adenylate ligand in the config file.
 
-    - Used by design algorithms to bias towards stable sequences.
+- Create a FASTA file:
 
-    - Don't provide an automatic script for this, because it requires the BLAST 
-      database (specifically nr).  This is far too big to include in a docker 
-      container, and unnecessary since most institutions already make the BLAST 
-      databases available somehow.  So I'll just give the command here::
+  - I did this by loading the PDB into PyMOL and using the ``save`` command 
+    to make a FASTA file.
 
-        psiblast \
-            -db nr_v5 \
-            -query 2zim.fasta \
-            -out_ascii_pssm 2zim.pssm \
-            -num_iterations 4 \
-            -num_alignments 1 \
-            -num_threads 8 \
+  - This file isn't directly used by the design pipeline, but it's needed to 
+    make some of the other input files.
+
+- Create a PSSM:
+
+  - Used by design algorithms to bias towards stable sequences.
+
+  - Don't provide an automatic script for this, because it requires the BLAST 
+    database (specifically nr).  This is far too big to include in a docker 
+    container, and unnecessary since most institutions already make the BLAST 
+    databases available somehow.  So I'll just give the command here::
+
+      psiblast \
+          -db nr_v5 \
+          -query 2zim.fasta \
+          -out_ascii_pssm 2zim.pssm \
+          -num_iterations 4 \
+          -num_alignments 1 \
+          -num_threads 8 \
+
+- Create a fragment library:
+
+  - Create an account on: https://old.robetta.org
+  - Submit a "Fragment Library" job.
+  - Upload the FASTA file created above.
+  - Don't exclude homologues.  That option is only used for benchmarking.
+  - You can use ``contrib/wget_robetta.sh`` to download the results.
       
 Custom design algorithms
 ------------------------
-- Implement a `--dry-run` option; it's very useful for development.
+- Most design algorithms take at least these arguments:
+
+  - The path to a PDB model of the scaffold with the target NCAA in the binding 
+    site.  The model will have been relaxed in the Rosetta force field in the 
+    context of its native ligand.  The native ligand will have been replaced 
+    with the target ligand without any further optimization, so there may be 
+    severe clashes.  It is assumed that these clashes will be resolved by the 
+    design algorithm itself.
+
+  - The path to the Rosetta ligand parameter file for the target NCAA.  This 
+    file should be provided to Rosetta via the ``-extra_res_fa`` command line 
+    option.
+
+  - The path to (or name of) the scaffold.  The scaffold contains a number of 
+    default design parameters described in the section above.
+
+  - `--dry-run` and `--debug-run` options; they're very useful for development.
 

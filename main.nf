@@ -2,20 +2,29 @@
 
 nextflow.enable.dsl = 2
 
-params.scaffold = ''
+params.scaffold = ''  // If specified as a path, must be absolute.
 params.ncaa = ''
 params.pdb = ''
 params.sdf = ''
 params.out = 'results'
-params.dry_run = false
-params.n_ncaa_confs = 10
 params.resfile = ''
+params.n_ncaa_confs = 100
+params.n_designs = 1000
+params.dry_run = false
 
-params.beyer = true
-params.beyer_n = 10
+params.greedyopt = true
+params.greedyopt_n = params.dry_run ? 2 : params.n_designs
+
+params.fast_relax = true
+params.fast_relax_n = params.dry_run ? 2 : params.n_designs
+
+params.coupled_moves = true
+params.coupled_moves_n = params.dry_run ? 2 : params.n_designs
+params.coupled_moves_ligand_weight = 1
+params.coupled_moves_bb_mover = 'backrub'
 
 process make_ncaa_conformers_etkdg() {
-    conda "${baseDir}/conda/rdkit_prody.yml"
+    label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
     input:
@@ -33,15 +42,14 @@ process make_ncaa_conformers_etkdg() {
 }
 
 process molfile_to_params {
-    container 'ncaars-molfile-to-params:v2021.49-dev61812'
+    label 'molfile_to_params'
     publishDir params.out, mode: 'rellink'
 
     input:
         path 'ncaa_adenylate.sdf'
 
     output:
-        path 'NCA.params', emit: param
-        path 'NCA_conformers.pdb', emit: pdb
+        tuple path('NCA.params'), path('NCA.pdb'), path('NCA_conformers.pdb')
 
     // References:
     // https://www.rosettacommons.org/demos/latest/tutorials/prepare_ligand/prepare_ligand_tutorial
@@ -52,40 +60,88 @@ process molfile_to_params {
         -p NCA \
         --conformers-in-one-file \
         ncaa_adenylate.sdf
-
-    # Don't know why `molfile_to_params.py` doesn't do this for me...
-    mv NCA.pdb NCA_conformers.pdb
     """
 }
 
 process copy_ncaa_into_scaffold {
-    conda "${baseDir}/conda/rdkit_prody.yml"
+    label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
     input:
         val scaffold
-        path 'NCA.pdb'
+        tuple path('NCA.params'), path('NCA.pdb'), path('NCA_conformers.pdb')
 
     output:
         path 'ncaa_adenylate_aars.pdb'
 
     """
-    copy_ncaa_into_scaffold.py '${scaffold}' NCA.pdb
+    copy_ncaa_into_scaffold.py '${scaffold}' NCA_conformers.pdb
+    """
+}
+
+process design_fast_relax {
+    label 'pyrosetta'
+    publishDir "${params.out}/fast_relax", mode: 'rellink'
+
+    input:
+        path 'input.pdb'
+        tuple path('NCA.params'), path('NCA.pdb'), path('NCA_conformers.pdb')
+        val scaffold
+        val n
+
+    output:
+        path "out_${n}.pdb"
+
+    """
+    design_fast_relax.py \
+        input.pdb \
+        NCA.params \
+        '${scaffold}' \
+        ${(r = params.resfile) ? "-r $r": ""} \
+        ${params.dry_run ? "-D": ""} \
+        -o 'out_${n}.pdb' \
+    """
+}
+
+process design_coupled_moves {
+    label 'pyrosetta'
+    publishDir "${params.out}/coupled_moves", mode: 'rellink'
+
+    input:
+        path 'input.pdb'
+        tuple path('NCA.params'), path('NCA.pdb'), path('NCA_conformers.pdb')
+        val scaffold
+        val n
+
+    output:
+        path "out_${n}.pdb"
+        path "cm_$n"
+
+    """
+    touch cm_$n
+    design_coupled_moves.py \
+        input.pdb \
+        NCA.params \
+        '${scaffold}' \
+        ${(r = params.resfile) ? "-r $r": ""} \
+        ${params.dry_run ? "-D": ""} \
+        -l ${params.coupled_moves_ligand_weight} \
+        -b ${params.coupled_moves_bb_mover} \
+        -o 'out_${n}.pdb' \
     """
 }
 
 process design_greedyopt {
-    container 'ncaars-rdkit-prody-pyrosetta'
+    label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
     input:
         path 'input.pdb'
-        path 'NCA.params'
-        path 'NCA_conformers.pdb'
+        tuple path('NCA.params'), path('NCA.pdb'), path('NCA_conformers.pdb')
         val scaffold
 
     output:
-        path 'design_greedyopt_beyer2020'
+        path 'greedyopt_beyer2020'
         path 'GreedyOptTable.tab'
 
     """
@@ -94,16 +150,11 @@ process design_greedyopt {
         NCA.params \
         '${scaffold}' \
         ${(r = params.resfile) ? "-r $r": ""} \
-        ${params.dry_run ? "-d": ""} \
-        -n ${params.beyer_n} \
-        -o 'design_greedyopt_beyer2020/{:03}.pdb.gz' \
+        ${params.dry_run ? "-D": ""} \
+        -n ${params.greedyopt_n} \
+        -o 'greedyopt_beyer2020/{:03}.pdb.gz' \
     """
 }
-
-/*
-process design_coupled_moves{
-}
-*/
 
 workflow {
     scaffold = channel.value(params.scaffold)
@@ -118,11 +169,19 @@ workflow {
         else {
             sdf = make_ncaa_conformers_etkdg(scaffold)
         }
-        lig = molfile_to_params(sdf)
-        pdb = copy_ncaa_into_scaffold(scaffold, lig.pdb) | first
+        lig = molfile_to_params(sdf) | first
+        pdb = copy_ncaa_into_scaffold(scaffold, lig)
     }
 
-    if( params.beyer ) {
+    if( params.fast_relax ) {
+        n = channel.of(1..params.fast_relax_n)
+        design_fast_relax(pdb, lig, scaffold, n)
+    }
+    if( params.coupled_moves ) {
+        n = channel.of(1..params.coupled_moves_n)
+        design_coupled_moves(pdb, lig, scaffold, n)
+    }
+    if( params.greedyopt ) {
         design_greedyopt(pdb, lig, scaffold)
     }
 }

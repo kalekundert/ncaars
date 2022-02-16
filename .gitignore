@@ -10,6 +10,9 @@ sandbox
 molfile_to_params.py
 rosetta_py
 
+# Docker / Singularity
+*.sif
+
 # Cookiecutter
 TODO
 cookie
