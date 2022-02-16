@@ -1,0 +1,32 @@
+<ROSETTASCRIPTS>
+    <SCOREFXNS>
+        <ScoreFunction name="sfxn" weights="%%scorefxn%%"/>
+    </SCOREFXNS>
+
+    <TASKOPERATIONS>
+        <ReadResfile name="resfile" filename="%%resfile_path%%"/>
+        <ExtraRotamersGeneric name="ex" ex1="true" ex2="true" extrachi_cutoff="0"/>
+        <LimitAromaChi2 name="aro" />
+        <IncludeCurrent name="curr"/>
+    </TASKOPERATIONS>
+
+    <RESIDUE_SELECTORS>
+        <ClashBasedShell name="cbs" task_operations="resfile" scorefxn="sfxn"/>
+        <PrimarySequenceNeighborhood name="move" selector="cbs"/>
+        <Not name="freeze" selector="move"/>
+    </RESIDUE_SELECTORS>
+
+    <TASKOPERATIONS>
+        <OperateOnResidueSubset name="pocket" selector="freeze">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+    </TASKOPERATIONS>
+
+    <MOVERS>
+        <FavorSequenceProfile name="pssm" scorefxns="sfxn" pssm="%%pssm_path%%"/>
+        <!-- Without the 'backbone_mover' setting, coupled moves will ignore the backbone mover specified on the command line.  WTF!!! -->
+        <CoupledMovesProtocol name="coupled_moves" task_operations="resfile,pocket,ex,aro,curr" score_fxn_="sfxn" backbone_mover="on"/>
+    </MOVERS>
+
+    <PROTOCOLS/>
+</ROSETTASCRIPTS>
