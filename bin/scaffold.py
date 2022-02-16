@@ -57,6 +57,15 @@ class Scaffold:
     )
     resfile_relpath = byoc.param(
             ('scaffold', 'resfile'),
+            default='resfile',
+    )
+    pssm_relpath = byoc.param(
+            ('scaffold', 'pssm'),
+            default='pssm',
+    )
+    frag_relpaths = byoc.param(
+            ('scaffold', 'frags'),
+            cast=lambda d: {int(k): v for k, v in d.items()}
     )
     adenylate_sele = byoc.param(
             ('adenylate', 'sele'),
@@ -100,6 +109,47 @@ class Scaffold:
 
     def get_resfile_path(self):
         return self._root / self.resfile_relpath
+
+    def get_pssm_path(self):
+        return self._root / self.pssm_relpath
+
+    def get_frag_paths(self):
+        return {
+                k: self._root / v
+                for k, v in self.frag_relpaths.items()
+        }
+
+    def get_frag_flags(self):
+        sizes = []
+        paths = []
+
+        # Sort the fragments by decreasing size of the fragments, because
+        # rosetta insists that the fragment arguments be in this order.
+
+        by_size = lambda x: -x[0]
+        for size, path in sorted(self.frag_paths.items(), key=by_size):
+            sizes.append(size)
+            paths.append(path)
+
+        # If no size-1 fragments were generated, but larger fragments were,
+        # also add the 'none' pseudo-path.  This will cause rosetta to make
+        # size-1 fragments from the next largest fragment set.
+
+        if sizes and sizes[-1] > 1:
+            sizes.append(1)
+            paths.append('none')
+
+        # Construct the command-line flags.
+
+        flags = []
+
+        if paths and sizes:
+            flags.append('-loops:frag_sizes')
+            flags.extend(map(str, sizes))
+            flags.append('-loops:frag_files')
+            flags.extend(map(str, paths))
+
+        return flags
 
     def get_atoms(self):
         return prody.parsePDB(self.pdb_path)
