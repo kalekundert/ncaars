@@ -2,6 +2,10 @@ scaffold:
   pdb: 2zim_relaxed_renumbered.pdb
   scorefxn: ref2015
   resfile: resfile
+  pssm: 2zim.pssm
+  frags:
+    9: frags/aa2zimA09_05.200_v1_3
+    3: frags/aa2zimA03_05.200_v1_3
 
 adenylate:
   sele: resname YLY
