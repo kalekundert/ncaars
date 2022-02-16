@@ -1,0 +1,35 @@
+<ROSETTASCRIPTS>
+    <SCOREFXNS>
+        <ScoreFunction name="sfxn" weights="%%scorefxn%%"/>
+    </SCOREFXNS>
+
+    <TASKOPERATIONS>
+        <ReadResfile name="resfile" filename="%%resfile_path%%"/>
+        <ClashBasedRepackShell name="clash" task_operations="resfile" scorefxn="sfxn"/>
+        <ExtraRotamersGeneric name="ex" ex1="true" ex2="true" extrachi_cutoff="0"/>
+        <LimitAromaChi2 name="aro" />
+        <IncludeCurrent name="curr"/>
+    </TASKOPERATIONS>
+
+    <RESIDUE_SELECTORS>
+        <Task name="task" task_operations="resfile,clash"/>
+        <PrimarySequenceNeighborhood name="move" selector="task"/>
+    </RESIDUE_SELECTORS>
+
+    <MOVE_MAP_FACTORIES>
+        <MoveMapFactory name="min_all" bb="1" chi="1" jumps="0"/>
+        <MoveMapFactory name="min_shell" bb="0" chi="0" jumps="0">
+            <Backbone residue_selector="move"/>
+            <Chi residue_selector="move"/>
+        </MoveMapFactory>
+    </MOVE_MAP_FACTORIES>
+
+    <MOVERS>
+        <FavorSequenceProfile name="pssm" scorefxns="sfxn" pssm="%%pssm_path%%"/>
+        <FastDesign name="relax" task_operations="resfile,clash,ex,aro,curr" movemap_factory="%%min%%" scorefxn="sfxn"/>
+    </MOVERS>
+
+    <PROTOCOLS/>
+
+</ROSETTASCRIPTS>
+

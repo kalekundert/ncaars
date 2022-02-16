@@ -6,75 +6,42 @@ import byoc
 import logging
 
 from pyrosetta import rosetta, Vector1
-from pyrosetta.io import pose_from_pdb
 from pyrosetta.rosetta.core.pose import Pose
 from pyrosetta.rosetta.protocols.rosetta_scripts import RosettaScriptsParser
 from pyrosetta.rosetta.protocols.moves import MoverStatus
-from rosetta_utils import init_rosetta, init_logging, kv
-from scaffold import Scaffold
-from byoc import Key, Method, DocoptConfig
+from rosetta_utils import DesignApp, OutputN, init_rosetta, init_logging, kv
+from byoc import DocoptConfig
 from pathlib import Path
 
 logger = logging.getLogger('design_greedyopt_beyer2020')
 
 @autoprop
-class DesignGreedyOpt(byoc.App):
+class DesignGreedyOpt(DesignApp, OutputN):
     """\
 Use the GreedyOpt algorithm described by [Beyer2020] to make an aaRS to bind
 a non-native NCAA.
 
 Usage:
     design_greedyopt_beyer2020.py <pdb> <lig> [<scaffold>] [-n <int>]
-        [-o <pdb>] [-f <sfxn>] [-r <resfile>] [-d]
+        [-o <pdb>] [-f <sfxn>] [-r <resfile>] [-dD]
 
 Arguments:
-    <pdb>
-        The starting model to design.  Chain A of this model must be an aaRS 
-        scaffold, and chain X must be an NCAA-adenylate ligand.
-
-    <lig>
-        The parameter file for the NCAA-adenylate ligand.
-
-    <scaffold>
-        Either the name of a built-in scaffold, or the path to a custom 
-        scaffold directory.  If specified, default values for various design 
-        parameters will be taken from the scaffold. 
+${app.shared_args}
 
 Options:
-    -n <int>                    [default: 10]
-        The number of structures to generate.
+${app.output_options}
 
-    -o --output <path>          [default: out_{:03}.pdb.gz]
-        The path where the output files should be written.  The path should 
-        contain python format code (e.g. '{}').  This will be used to add a 
-        unique index to each path.
-
-    -f --scorefxn <name>
-        Which score function to use.  This overrides the score function 
-        specified in the scaffold (i.e. the score function that the scaffold 
-        was relaxed with), so this option should never be used for production 
-        simulations.
-
-    -r --resfile <path>
-        The path to the resfile to use.  This overrides the default resfile 
-        that may be specified in the scaffold.
-
-    -d --dry-run
-        Run an abbreviated simulation, for the purpose of debugging.  Note 
-        however that this option doesn't do very much on its own (it just makes 
-        the relax steps a bit faster).  To really abbreviate this protocol, it 
-        is necessary to provide a resfile with very few (e.g. 2-5) allowed 
-        mutations.
+${app.shared_options}
 
 Algorithm:
-    The design protocol uses the Rosetta GreedyOpt algorithm [Nivon2014].  The 
+    This design protocol uses the Rosetta GreedyOpt algorithm [Nivon2014].  The 
     idea of using this algorithm and many of the specific parameters are taken 
     from [Beyer2020], which applies the GreedyOpt algorithm to the problem of 
-    aaRS design.  However, this algorithm is not meant to exactly recapitulate 
+    aaRS design.  However, this protocol is not meant to exactly recapitulate 
     the results from [Beyer2020]:
 
-    - The original algorithm was tailored to a specific aaRS, while this 
-      algorithm is general.
+    - The original protocol was tailored to a specific aaRS, while this 
+      one is general.
     - A different score function is used.
     - The repack shell is more conservative.
 
@@ -95,58 +62,27 @@ References:
     [Beyer2020] DOI:10.1016/j.jmb.2020.06.014
     [Nivon2014] DOI:10.1002/prot.24463
 """
-    __config__ = [DocoptConfig]
-
-    pdb_path = byoc.param(
-            Key(DocoptConfig, '<pdb>'),
-    )
-    lig_path = byoc.param(
-            Key(DocoptConfig, '<lig>'),
-    )
-    n = byoc.param(
-            Key(DocoptConfig, '-n'),
-            cast=int,
-    )
-    scaffold = byoc.param(
-            Key(DocoptConfig, '<scaffold>'),
-            cast=Scaffold,
-    )
-    scorefxn = byoc.param(
-            Key(DocoptConfig, '--scorefxn'),
-            Method(lambda self: self.scaffold.scorefxn),
-    )
-    resfile_path = byoc.param(
-            Key(DocoptConfig, '--resfile'),
-            Method(lambda self: self.scaffold.resfile_path),
-    )
-    output_path = byoc.param(
-            Key(DocoptConfig, '--output'),
-    )
-    dry_run = byoc.param(
-            Key(DocoptConfig, '--dry-run'),
-    )
+    default_n = 10
 
     def main(self):
         self.load(DocoptConfig)
 
-        init_rosetta('-extra_res_fa', self.lig_path, test_cycles=self.dry_run)
+        init_rosetta(
+                '-extra_res_fa', self.lig_path,
+                test_cycles=self.debug_run,
+        )
         init_logging(logger)
 
-        results = iter_design_greedyopt_beyer2020(
+        poses = iter_greedyopt_beyer2020(
                 self.pose,
                 scorefxn=self.scorefxn,
                 resfile_path=self.resfile_path,
+                dry_run=self.dry_run,
         )
-        for i, pose in zip(range(self.n), results):
-            out_path = self.output_path.format(i)
-            Path(out_path).parent.mkdir(exist_ok=True, parents=True)
-            pose.dump_pdb(out_path)
+        for i, pose in zip(range(self.n), poses):
+            self.dump_pdb(pose, i, logger)
 
-    def get_pose(self):
-        return pose_from_pdb(self.pdb_path)
-
-
-def iter_design_greedyopt_beyer2020(pose, *, scorefxn, resfile_path):
+def iter_greedyopt_beyer2020(pose, *, scorefxn, resfile_path, dry_run):
     xml_script = Path(__file__).parent / 'design_greedyopt_beyer2020.xml'
     options = [
             f"scorefxn={scorefxn}",
@@ -155,6 +91,11 @@ def iter_design_greedyopt_beyer2020(pose, *, scorefxn, resfile_path):
 
     rsp = RosettaScriptsParser()
     mover = rsp.generate_mover(str(xml_script), Vector1(options))
+
+    if dry_run:
+        Path('GreedyOptTable.tab').touch()
+        while True:
+            yield pose
 
     while True:
         pose_copy = Pose(pose)
