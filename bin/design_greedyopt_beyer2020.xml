@@ -5,7 +5,6 @@
 
     <TASKOPERATIONS>
         <IncludeCurrent name="current"/>
-        <SetIGType name="linmem_ig" lin_mem_ig="1"/>
         <LimitAromaChi2 name="limitchi2" />
         <ProteinLigandInterfaceUpweighter name="up" interface_weight="1.2"/>
         <ReadResfile name="resfile" filename="%%resfile_path%%"/>

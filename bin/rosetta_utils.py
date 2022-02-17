@@ -140,7 +140,9 @@ class OutputN:
 
 def init_rosetta(*flags, test_cycles=False, dry_run=False):
     flags = list(flags)
-
+    flags += [
+            '-packing:ignore_ligand_chi', True,
+    ]
     if test_cycles:
         flags.append('-run:test_cycles')
     if dry_run:
