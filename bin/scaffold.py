@@ -152,7 +152,7 @@ class Scaffold:
         return flags
 
     def get_atoms(self):
-        return prody.parsePDB(self.pdb_path)
+        return prody.parsePDB(str(self.pdb_path))
 
     def get_apo_atoms(self):
         sele = self.adenylate_sele

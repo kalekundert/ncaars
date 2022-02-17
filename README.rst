@@ -130,15 +130,44 @@ Custom scaffolds
 Preparing a custom scaffold for this pipeline takes a lot of setup work, and 
 most of it has to be done by hand.  Below is an outline of the basic steps:
 
-- Get a PDB model of the scaffold with a ligand bound.
+- Get a PDB model of the aaRS scaffold with the amino acid adenylate bound.  It 
+  may be necessary to merge coordinates from two models to make this happen.  
+  The exact coordinates of the AMP moiety are the most important; the amino 
+  acid coordinates are just used to loosely define the binding pocket.
 
+- Specify which ligand atoms to consider part of the "anchor" and the "pocket".  
+  Anchor atoms are held in place throughout the design process, and are meant 
+  to correspond to the AMP.  Pocket atoms are meant to loosely define where the 
+  active site is, and are typically the sidechain atoms of the natural amino 
+  acid substrate.
+
+  Both sets of atoms are specified using SMARTS queries.  These queries can be 
+  finicky and hard to get right.  I write them using a Jupyter lab session, 
+  because that makes it easy to experiment (in no small part because rdkit 
+  automatically shows 2D molecular structures in Jupyter sessions).  Here's an 
+  example session::
+
+    $ cd /path/to/ncaars/bin
+    $ from scaffold import Scaffold
+    $ s = Scaffold('my_custom_scaffold')
+    $ m = s.adenylate_mol_2d
+    $ m
+    2D structure of adenylate
+    $ from rdkit.Chem import AllChem as Chem
+    $ smarts = Chem.MolFromSmarts
+    $ q = smarts('OC(=O)')
+    $ q
+    2D structure of query
+    $ m.GetSubstructMatch(q)
+    # list of matching positions
+    $ m
+    2D structure of adenylate, this time with matching atoms highlighted
+  
 - Relax the model in a rosetta score function, e.g. ref2015.
 
   - I use kalekundert/rosetta_relax_b for this purpose.
   - I recommend renumbering the residues in the scaffold to count from 1 
     before this step.
-
-- Describe the adenylate ligand in the config file.
 
 - Create a FASTA file:
 
