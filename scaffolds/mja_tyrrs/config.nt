@@ -1,6 +1,7 @@
 scaffold:
   pdb: 1j1u_5n5u_renumbered.pdb
   scorefxn: ref2015
+  pssm: 1j1u.pssm
 
 adenylate:
   # The "adenylate" in this scaffold is actually two molecules---AMP and 
