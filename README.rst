@@ -120,6 +120,16 @@ Running the pipeline
   to build the docker images), you can also give the path to the ``main.nf`` 
   script.
 
+- The ``make_ncaa_conformers_etkdg.py`` script generates the following 
+  warning::
+
+    WARNING: More than one matching pattern found - picking one
+
+  This happens because the AMP phosphate has two identical oxygens, so RDKit 
+  can't unambiguously match the oxygens in the SMARTS strings to the oxygens in 
+  the PDB file.  As long as no effort is made to treat the two oxygens 
+  differently, though, it doesn't matter how they are matched.
+
 - To see logs from conformer-generation steps:
 
     > conda install eliot-tree

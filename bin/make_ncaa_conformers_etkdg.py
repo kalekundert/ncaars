@@ -5,8 +5,9 @@ Generate conformers for an adenylated non-canonical amino acid (NCAA) using the
 ETKDG algorithm (via RDKit).
 
 Usage:
-    make_adenylated_ncaa_conformers.py <scaffold> <ncaa> [-o <sdf>] [-i <ca>] 
-        [-n <confs>] [-t <rms>] [-r <seed>]
+    make_adenylated_ncaa_conformers.py <scaffold> <ncaa> [-o <sdf>]
+        [-n <confs>] [-N <tries>] [-t <rms>] [-a <tol>] [-p <tol>] [-k <frac>]
+        [-r <seed>] [-i <ca>] 
 
 Arguments:
     <scaffold>
@@ -18,19 +19,48 @@ Arguments:
         A SMILES string describing the NCAA.
 
 Options:
-    -o --output <sdf>               [default: ncaa_adenylate.sdf]
+    -o --output <sdf>                   [default: ncaa_adenylate.sdf]
         The path where the SDF file containing the generated conformers will be 
         written.
 
-    -n --num-confs <int>            [default: 10]
+    -n --num-confs <int>                [default: 10]
         The number of conformations to generate.
 
-    -t --rms-threshold <float>      [default: -1]
+    -N --num-tries-per-conf <int>       [default: -1]
+        Most attempts to generate a conformation are unsuccessful, most often  
+        because not all the atoms are close enough to their required positions.  
+        This option controls the number of attempts to make before giving up.  
+        Specifically, the total number of iterations attempted will be the 
+        product of `--num-confs` and `--num-tries-per-conf`.  Once this limit 
+        is exceeded, the program will terminate with however many conformations 
+        have been found to that point.  By default, the program will not 
+        terminate until it has found the requested number of conformations.
+
+    -t --rms-threshold <float>          [default: -1]
         Every conformer must be at least this distance from every other 
         conformer.  The default value (-1) indicates that no threshold will be 
         applied.
 
-    -r --random-seed <seed>         [default: 1]
+    -a --anchor-tol <float>             [default: 0.5]
+        How close each anchor atom must be to its target position.  Any 
+        conformations with greater distances than this will be discarded.
+
+    -p --pocket-tol <float>             [default: 3.0]
+        How close each NCAA atom must be to a corresponding pocket atom defined 
+        in the scaffold.  Pocket atoms are meant to loosely identify where the 
+        binding pocket is located.  Correspondence between NCAA and pocket 
+        atoms are defined based on the number of bonds that separate those 
+        atoms from a common reference atom (e.g. Cα).  It's possible for each 
+        NCAA atom to correspond with multiple pocket atoms, in which case it 
+        only needs to be within the given distance for one of them.
+
+    -k --quantile-keep <frac>           [default: 0.9]
+        Keep only the highest-scoring fractions of all the generated 
+        conformations that pass all the distance cutoffs.  The purpose of this 
+        is to avoid the possibility that a handful of outlier conformations 
+        with really bad geometries get incorporated into the rotamer set.
+
+    -r --random-seed <seed>             [default: 1]
         The seed used to randomize atom coordinates during the distance 
         geometry step of the algorithm.
 
@@ -55,7 +85,7 @@ from rdkit.Chem import AllChem
 from rdkit.DistanceGeometry.DistGeom import DoTriangleSmoothing
 from scaffold import mol_from_smiles, mol_from_smarts, smiles_from_mol, smarts_from_mol
 from dataclasses import dataclass
-from itertools import product, combinations
+from itertools import product, combinations, count
 from more_itertools import first, zip_equal
 from log import init_logging, log_call, log_message
 from copy import copy
@@ -141,9 +171,21 @@ class SubstrateAlignment:
         topo_dists_mol = Chem.GetDistanceMatrix(self.mol)
         topo_dists_ref = Chem.GetDistanceMatrix(self.ref)
 
-        # Arbitrarily pick an anchor atom to use as a reference point for 
-        # looking up topological distances.
-        i_mol, i_ref = first(self.anchor_indices.items())
+        # Pick the anchor atom nearest to the pocket atoms.  This is necessary 
+        # to handle the case where some of the anchor atoms are on a different 
+        # molecule than the pocket atoms.
+
+        min_topo_dist = np.inf
+
+        for k_ref in self.ref_anchor_indices:
+            dists = topo_dists_ref[k_ref, list(ref_pocket_indices)]
+            dist = np.sum(dists)
+
+            if dist < min_topo_dist:
+                i_ref = k_ref
+                min_topo_dist = dist
+
+        i_mol = self.ref_anchor_indices[i_ref]
 
         for j_ref in ref_pocket_indices:
             self.ref_pocket_indices[j_ref] = set()
@@ -152,6 +194,9 @@ class SubstrateAlignment:
             for j_mol in self.pocket_indices:
                 if topo_dists_mol[i_mol, j_mol] == d:
                     self.ref_pocket_indices[j_ref].add(j_mol)
+
+        assert any(self.ref_pocket_indices.values())
+
 
 
 class UsageError(tidyexc.Error):
@@ -213,9 +258,9 @@ def generate_conformers_etkdg(
         random_seed=0,
         rms_thresh=-1,
         anchor_restraint_tol=0.01,
-        pocket_restraint_tol=1.0,
         anchor_prune_tol=0.5,
-        max_tries_per_conf=100,
+        pocket_prune_tol=3.0,
+        max_tries_per_conf=0,
         quantile_keep=0.9,
 ):
     mol_h = Chem.AddHs(alignment.mol)
@@ -223,7 +268,7 @@ def generate_conformers_etkdg(
     # Try making my own distance matrix
     bounds = AllChem.GetMoleculeBoundsMatrix(mol_h)
     DoTriangleSmoothing(bounds)
-    restrain_anchor_atoms(alignment, bounds)
+    restrain_anchor_atoms(alignment, bounds, tol=anchor_restraint_tol)
 
     params = AllChem.srETKDGv3()
     params.SetBoundsMat(bounds)
@@ -242,7 +287,12 @@ def generate_conformers_etkdg(
 
     scores = {}
 
-    for i in range(n_build * max_tries_per_conf):
+    if max_tries_per_conf > 0:
+        counter = range(n_build * max_tries_per_conf)
+    else:
+        counter = count(0)
+
+    for i in counter:
         params.randomSeed += 1
         conf_id = AllChem.EmbedMolecule(mol_h, params)
         if conf_id < 0:
@@ -256,12 +306,12 @@ def generate_conformers_etkdg(
                 atomMap=list(alignment.anchor_indices.items()),
         )
 
-        if any_anchor_atoms_misplaced(alignment, conf):
+        if any_anchor_atoms_misplaced(alignment, conf, tol=anchor_prune_tol):
             mol_h.RemoveConformer(conf_id)
             n_rejected_anchor += 1
             continue
 
-        if any_pocket_atoms_misplaced(alignment, conf):
+        if any_pocket_atoms_misplaced(alignment, conf, tol=pocket_prune_tol):
             mol_h.RemoveConformer(conf_id)
             n_rejected_pocket += 1
             continue
@@ -277,18 +327,16 @@ def generate_conformers_etkdg(
         if n_kept >= n_build:
             break
 
-    else:
-        log_message(...)
-
-    score_cutoff = np.quantile(
-            list(scores.values()),
-            quantile_keep,
-    )
-    for conf_id, score in scores.items():
-        if score > score_cutoff:
-            mol_h.RemoveConformer(conf_id)
-            n_rejected_score += 1
-            n_kept -= 1
+    if scores:
+        score_cutoff = np.quantile(
+                list(scores.values()),
+                quantile_keep,
+        )
+        for conf_id, score in scores.items():
+            if score > score_cutoff:
+                mol_h.RemoveConformer(conf_id)
+                n_rejected_score += 1
+                n_kept -= 1
 
     log_message(f"attempted to generate {i+1} conformers")
     log_message(f"failed to generate a conformer {n_failed_embedding} times")
@@ -319,13 +367,20 @@ def restrain_anchor_atoms(alignment, bounds, *, tol=0.01):
         bounds[j,i] = max(d - tol, 0)
 
 def any_anchor_atoms_misplaced(alignment, conf, *, tol=0.5):
+    if tol < 0:
+        return False
+
     for i, xyz_expected in alignment.anchor_coords.items():
         xyz_actual = conf.GetAtomPosition(i)
         if xyz_expected.Distance(xyz_actual) > tol:
             return True
+
     return False
 
 def any_pocket_atoms_misplaced(alignment, conf, *, tol=3.0):
+    if tol < 0:
+        return False
+
     for i in alignment.ref_pocket_indices:
         xyz_expected = alignment.ref_conf.GetAtomPosition(i)
 
@@ -375,6 +430,10 @@ if __name__ == '__main__':
             num_confs=int(args['--num-confs']),
             random_seed=int(args['--random-seed']),
             rms_thresh=float(args['--rms-threshold']),
+            anchor_prune_tol=float(args['--anchor-tol']),
+            pocket_prune_tol=float(args['--pocket-tol']),
+            max_tries_per_conf=int(args['--num-tries-per-conf']),
+            quantile_keep=float(args['--quantile-keep']),
     )
     write_sdf(ncaa_adenylate_3d, args['--output'])
 
