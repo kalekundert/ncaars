@@ -1,5 +1,5 @@
 scaffold:
-  pdb: 1j1u_5n5u_renumbered.pdb
+  pdb: 1j1u_5n5u_relaxed.pdb
   scorefxn: ref2015
   pssm: 1j1u.pssm
   frags:

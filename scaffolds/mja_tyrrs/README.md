@@ -21,3 +21,5 @@ To make the starting model, I followed these steps:
   - Terminate chain A after L306.
 
 - Renumber the atoms consecutively.
+
+- Relax the model using ``rosetta_relax_b``
