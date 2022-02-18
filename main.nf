@@ -91,7 +91,7 @@ process copy_ncaa_into_scaffold {
 process design_fast_relax {
     cpus 1
     memory '2GB'
-    time '4h'
+    time '8h'
     label 'pyrosetta'
     publishDir "${params.out}/fast_relax", mode: 'rellink'
 
@@ -130,10 +130,8 @@ process design_coupled_moves {
 
     output:
         path "out_${n}.pdb"
-        path "cm_$n"
 
     """
-    touch cm_$n
     design_coupled_moves.py \
         input.pdb \
         NCA.params \
@@ -149,7 +147,7 @@ process design_coupled_moves {
 process design_greedyopt {
     cpus 1
     memory '2GB'
-    time '24h'
+    time '48h'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
 
