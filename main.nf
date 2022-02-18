@@ -29,6 +29,7 @@ process make_ncaa_conformers_etkdg() {
     time '4h'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
+    stageInMode 'rellink'
 
     input:
         val scaffold
@@ -50,6 +51,7 @@ process molfile_to_params {
     time '30m'
     label 'molfile_to_params'
     publishDir params.out, mode: 'rellink'
+    stageInMode 'rellink'
 
     input:
         path 'ncaa_adenylate.sdf'
@@ -75,6 +77,7 @@ process copy_ncaa_into_scaffold {
     time '30m'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
+    stageInMode 'rellink'
 
     input:
         val scaffold
@@ -94,6 +97,7 @@ process design_fast_relax {
     time '8h'
     label 'pyrosetta'
     publishDir "${params.out}/fast_relax", mode: 'rellink'
+    stageInMode 'rellink'
 
     input:
         path 'input.pdb'
@@ -121,6 +125,7 @@ process design_coupled_moves {
     time '4h'
     label 'pyrosetta'
     publishDir "${params.out}/coupled_moves", mode: 'rellink'
+    stageInMode 'rellink'
 
     input:
         path 'input.pdb'
@@ -150,6 +155,7 @@ process design_greedyopt {
     time '48h'
     label 'pyrosetta'
     publishDir params.out, mode: 'rellink'
+    stageInMode 'rellink'
 
     input:
         path 'input.pdb'
