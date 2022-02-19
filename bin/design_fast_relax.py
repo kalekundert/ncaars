@@ -76,8 +76,8 @@ References:
         if self.bb_restraint is not None:
             rosetta_args += ['-relax:coord_cst_stdev', self.bb_restraint]
 
-        init_rosetta(*rosetta_args, test_cycles=self.debug_run)
         init_logging(logger)
+        init_rosetta(*rosetta_args, test_cycles=self.debug_run)
 
         pose = fast_relax(
                 self.pose,

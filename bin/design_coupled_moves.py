@@ -82,6 +82,7 @@ References:
         self.load(DocoptConfig)
 
         # A lot of coupled-moves options can only be set via the command line.
+        init_logging(logger)
         init_rosetta(
                 '-extra_res_fa', self.lig_path,
                 '-coupled_moves::ligand_mode', True,
@@ -90,7 +91,6 @@ References:
                 '-out::mute', 'protocols.backrub.BackrubMover',
                 *self.backbone_mover_flags,
         )
-        init_logging(logger)
 
         # Add a logging handler that will let us record each sequence visited 
         # by coupled moves.  This is a bit hacky, but unfortunately there's no 

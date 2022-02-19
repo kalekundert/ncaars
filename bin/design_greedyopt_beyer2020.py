@@ -67,11 +67,11 @@ References:
     def main(self):
         self.load(DocoptConfig)
 
+        init_logging(logger)
         init_rosetta(
                 '-extra_res_fa', self.lig_path,
                 test_cycles=self.debug_run,
         )
-        init_logging(logger)
 
         poses = iter_greedyopt_beyer2020(
                 self.pose,
