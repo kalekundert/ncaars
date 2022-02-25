@@ -204,6 +204,12 @@ most of it has to be done by hand.  Below is an outline of the basic steps:
           -num_alignments 1 \
           -num_threads 8 \
 
+    I request the following resources when running this command:
+
+    - CPUs: 8
+    - Memory: 80 GB (10 GB/core)
+    - Time: 12h
+
 - Create a fragment library:
 
   - Create an account on: https://old.robetta.org
