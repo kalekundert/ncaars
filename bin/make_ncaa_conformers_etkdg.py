@@ -11,9 +11,9 @@ Usage:
 
 Arguments:
     <scaffold>
-        Either the name a built-in scaffolds (e.g. 'mma_pylrs', 'mja_tyrrs') or 
-        a path to a directory containing all the necessary information about a 
-        custom scaffold.
+        Either the name of a built-in scaffold (e.g. 'mma_pylrs', 'mja_tyrrs') 
+        or a path to a directory containing all the necessary information about 
+        a custom scaffold.
 
     <ncaa>
         A SMILES string describing the NCAA.
