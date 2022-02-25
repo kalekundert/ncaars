@@ -57,11 +57,15 @@ ${app.shared_options}
 
 Algorithm:
     This design protocol uses the Rosetta coupled moves algorithm 
-    [Ollikainen2015].  The central idea of this algorithm is to propose changes 
-    to both the backbone and the sidechains before deciding whether to accept 
-    or reject the proposed changes.  This should allow bigger sidechain moves 
-    to be made.  Redesigning the specificity of ligand binding sites was the 
-    problem that coupled moves was originally designed for and benchmarked on 
+    [Ollikainen2015].  Compared to the other design algorithms implemented as 
+    part of this pipeline, coupled moves puts particular emphasis on modeling 
+    backbone movement.
+
+    The central idea of this algorithm is to propose changes to both the 
+    backbone and the sidechains before deciding whether to accept or reject the 
+    proposed changes.  This should allow bigger sidechain moves to be made.  
+    Redesigning the specificity of ligand binding sites was the problem that 
+    coupled moves was originally designed for and benchmarked on 
     [Ollikainen2015], so there's reason to believe that it will perform well 
     for aaRS design.
 
