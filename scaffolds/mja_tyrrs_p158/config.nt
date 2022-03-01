@@ -1,0 +1,21 @@
+scaffold:
+  pdb: 1zh0_5n5u_relaxed.pdb
+  scorefxn: ref2015
+  pssm: 1zh0.pssm
+  frags:
+    9: frags/aa1zh0A09_05.200_v1_3
+    3: frags/aa1zh0A03_05.200_v1_3
+
+adenylate:
+  # The "adenylate" in this scaffold is actually two molecules---AMP and 
+  # naphthylalanine---because there are no structures of MjTyrRS (in the P158 
+  # conformation) with the adenylate.
+  sele: chain X
+  smiles: N[C@@H](Cc1ccc2ccccc2c1)C(O)=O.O=P(O)(O)OC[C@H]3O[C@@H](n2cnc1c(ncnc12)N)[C@H](O)[C@@H]3O
+
+  # The anchor includes the amino acid C and Cα, but not the AMP phosphate.  
+  # This is because the phosphate will have to move to bond with the acid.
+  anchor_smarts: c12ncnc(N)c1ncn2C3C(O)C(O)C(O3)CO.[C;$(C(=O)O)]C
+
+  # The pocket starts at the naphthylalanine Cβ.
+  pocket_smarts: Cc1ccc2ccccc2c1

@@ -33,13 +33,14 @@ To make the starting model, I followed these steps:
 - Move the AMP and NpAla into chain X:
 
     PyMOL> extract 1zh0_5n5u, all
-    PyMOL> alter resn AMP, chain='X'
-    PyMOL> alter resn AMP, resi=1
     PyMOL> alter resn NAL, chain='X'
-    PyMOL> alter resn NAL, resi=2
+    PyMOL> alter resn NAL, resi=1
+    PyMOL> alter resn AMP, chain='X'
+    PyMOL> alter resn AMP, resi=2
 
 - Save the resulting model to `1zh0_5n5u.pdb`.
 
     PyMOL> save 1zh0_5n5u.pdb
+    PyMOL> save 1zh0.fasta
 
 - Relax the model using ``rosetta_relax_b``
