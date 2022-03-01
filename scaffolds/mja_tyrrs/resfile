@@ -1,0 +1,40 @@
+NATAA
+START
+
+# The following residues directly contact the NCAA and are included/mutated 
+# very frequently in directed evolution experiments:
+
+32  A ALLAA
+34  A ALLAA
+65  A ALLAA
+67  A ALLAA
+70  A ALLAA
+109 A ALLAA
+155 A ALLAA
+158 A ALLAA
+159 A ALLAA
+162 A ALLAA
+167 A ALLAA
+177 A ALLAA
+
+# The following residues could possibly affect the shape of the binding pocket, 
+# e.g. by contacting the residues that contact the NCAA (i.e. second-shell) or 
+# by forming part of the hydrophobic core around the NCAA-binding pocket. 
+
+63  A ALLAA
+103 A ALLAA
+105 A ALLAA
+108 A ALLAA
+114 A ALLAA
+154 A ALLAA
+164 A ALLAA
+169 A ALLAA
+180 A ALLAA
+188 A ALLAA
+
+# Note that residues 203-209 are not present in this model, and the remaining 
+# residues have been renumbered consecutively.  That means that residues 
+# indices greater than 202 don't refer to the same residue in this scaffold 
+# that they would most other contexts.  If you want to design any of these 
+# residues (which shouldn't often be necessary, as none of them come very close 
+# to the NCAA-binding pocket), double check that you have the right index.

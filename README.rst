@@ -157,21 +157,40 @@ most of it has to be done by hand.  Below is an outline of the basic steps:
   automatically shows 2D molecular structures in Jupyter sessions).  Here's an 
   example session::
 
-    $ cd /path/to/ncaars/bin
-    $ from scaffold import Scaffold
-    $ s = Scaffold('my_custom_scaffold')
-    $ m = s.adenylate_mol_2d
-    $ m
+    > cd /path/to/ncaars/bin
+    > from scaffold import Scaffold
+    > s = Scaffold('my_custom_scaffold')
+    > m = s.adenylate_mol_2d
+    > m
     2D structure of adenylate
-    $ from rdkit.Chem import AllChem as Chem
-    $ smarts = Chem.MolFromSmarts
-    $ q = smarts('OC(=O)')
-    $ q
+    > from rdkit.Chem import AllChem as Chem
+    > smarts = Chem.MolFromSmarts
+    > q = smarts('OC(=O)')
+    > q
     2D structure of query
-    $ m.GetSubstructMatch(q)
-    # list of matching positions
-    $ m
+    > m.GetSubstructMatch(q)
+    list of matching positions
+    > m
     2D structure of adenylate, this time with matching atoms highlighted
+
+- Specify which residues will be allowed to mutate.  This is done using a 
+  "resfile"; a rosetta-specific file format described here: 
+
+  https://www.rosettacommons.org/docs/latest/rosetta_basics/file_types/resfiles
+  
+  It's recommended that you do not limit which amino acids are allowed at the 
+  positions you want to design, and that you don't freeze any positions.  The 
+  design algorithms will make these decisions themselves (e.g. limiting amino 
+  acids based on secondary structure or a PSSM, freezing residues based on 
+  their proximity to the design shell) and it's best not to step on their toes.
+
+  For example, here is a resfile that allows design at positions 32 and 34::
+
+    NATAA
+    START
+
+    32 A ALLAA
+    34 A ALLAA
   
 - Relax the model in a rosetta score function, e.g. ref2015.
 

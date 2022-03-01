@@ -1,0 +1,34 @@
+NATAA
+START
+
+# The following residues directly contact the NCAA and are included/mutated 
+# very frequently in directed evolution experiments:
+
+32  A ALLAA
+34  A ALLAA
+65  A ALLAA
+67  A ALLAA
+70  A ALLAA
+109 A ALLAA
+155 A ALLAA
+160 A ALLAA
+161 A ALLAA
+167 A ALLAA
+177 A ALLAA
+
+# The following residues could possibly affect the shape of the binding pocket, 
+# e.g. by contacting the residues that contact the NCAA (i.e. second-shell) or 
+# by forming part of the hydrophobic core around the NCAA-binding pocket. 
+
+63  A ALLAA
+103 A ALLAA
+105 A ALLAA
+108 A ALLAA
+114 A ALLAA
+154 A ALLAA
+157 A ALLAA
+159 A ALLAA
+164 A ALLAA
+169 A ALLAA
+188 A ALLAA
+
