@@ -1,22 +1,38 @@
-# THIS RESFILE IS JUST A PLACEHOLDER
-#
-# These positions are just a subset of the residues within a 4Å shell of the 
-# pyrrolysine sidechain in 2ZIM.  I didn't use any knowledge of which residues 
-# are known to be designable, and I didn't consider which positions would be 
-# clonable.
-
 NATAA
 START
 
-108 A ALLAA
-111 A ALLAA
-112 A ALLAA
-115 A ALLAA
-150 A ALLAA
-152 A ALLAA
-154 A ALLAA
-190 A ALLAA
-205 A ALLAA
-223 A ALLAA
-225 A ALLAA
-227 A ALLAA
+# These residues make direct contact with the NCAA, or are frequently mutated 
+# in the models deposited in the PDB:
+
+85  276 A ALLAA
+108 302 A ALLAA
+112 306 A ALLAA
+115 309 A ALLAA
+152 346 A ALLAA
+154 348 A ALLAA
+190 384 A ALLAA
+207 401 A ALLAA
+213 407 A ALLAA
+214 408 A ALLAA
+217 411 A ALLAA
+219 413 A ALLAA
+223 417 A ALLAA
+225 419 A ALLAA
+227 421 A ALLAA
+
+# These residues make second-shell interactions with the NCAA:
+
+106 300 A ALLAA
+107 301 A ALLAA
+111 305 A ALLAA
+128 322 A ALLAA
+156 350 A ALLAA
+189 383 A ALLAA
+211 405 A ALLAA
+
+# Note that all of the residues in this scaffold have been renumbered to count 
+# from 1.  The models deposited in the PDB only include the C-terminus of 
+# Mma PylRS, and mostly start around residue 190.  To get the canonical residue 
+# numbers from the nubmers in this file, add 194 (e.g. renumbered residue 108 
+# corresponds to canonical residue 302).  The only exception is renumbered 
+# residue 85, which corresponds to canonical residue 276.
