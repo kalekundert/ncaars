@@ -69,7 +69,7 @@ Installing the pipeline
         GB).  If your ``/tmp`` is not big enough, you may need to specify a 
         different temporary directory like so::
 
-          SINGULARITY_TMPDIR=/home/kale make sif
+          SINGULARITY_TMPDIR=/path/to/mount/with/free/space make sif
 
   - Conda:
 
@@ -94,9 +94,20 @@ Running the pipeline
 
       params.scaffold = 'mma_pylrs'
 
-    There are two built-in scaffolds you can use: ``mma_pylrs`` and 
-    ``mja_tyrrs``.  The following section describes how to create a custom 
-    scaffold.
+    There are three built-in scaffolds you can use:
+    
+    - ``mma_pylrs``: M. mazei pyrrolysine synthetase (Mma PylRS)
+    - ``mja_tyrrs``: M. jannaschii tyrosine synthetase (Mja TyrRS)
+    - ``mja_tyrrs_p158``: A naphthylalanine synthetase evolved from the Mja 
+      TyrRS scaffold.  This synthetase notably has the D158P mutation, which 
+      causes a dramatic rearrangment of one of the helices forming the amino 
+      acid binding pocket.
+
+    Traditionally, the PylRS scaffold is used for NCAAs derived from lysine and 
+    the TyrRS scaffold is used for NCAAs derived from tyrosine.  However, it 
+    may be worth trying all three scaffolds for any design problem.  If you'd 
+    like to use a custom scaffold, the following section describes how to do 
+    that.
       
   - Tell nextflow which containers/conda environments to use:
 
@@ -125,6 +136,10 @@ Running the pipeline
   to build the docker images), you can also give the path to the ``main.nf`` 
   script.
 
+  The results will appear in a directory called ``results``.  Each design will 
+  be represented by a PDB file containing the predicted structure of that 
+  design.
+
 - The ``make_ncaa_conformers_etkdg.py`` script generates the following 
   warning::
 
@@ -135,7 +150,7 @@ Running the pipeline
   the PDB file.  As long as no effort is made to treat the two oxygens 
   differently, though, it doesn't matter how they are matched.
 
-- To see logs from conformer-generation steps:
+- To see logs from conformer-generation steps::
 
     > conda install eliot-tree
     > eliot-tree log.json
@@ -203,6 +218,17 @@ most of it has to be done by hand.  Below is an outline of the basic steps:
   - I recommend renumbering the residues in the scaffold to count from 1 
     before this step.
 
+    - Rosetta protocols sometimes use PDB residue numbering, and sometimes use 
+      consecutive residue numbering (starting from 1).  It can be hard to keep 
+      track of which protocols use which indexing scheme, and so the 
+      easiest/most reliable thing is just to make them the same.
+
+    - Renumbering does cause some annoying problems: the residue indices in the 
+      design simulations may not correspond to the residue numbers commonly 
+      used in the literature, and it can take some work to get the actual 
+      sequence of a design from it PDB model (e.g. to fill in any missing 
+      residues).  But as a whole, I think renumbering is the best approach.
+
 - Create a FASTA file:
 
   - I did this by loading the PDB into PyMOL and using the ``save`` command 
@@ -236,6 +262,12 @@ most of it has to be done by hand.  Below is an outline of the basic steps:
 
 - Create a fragment library:
 
+  - Currently, the fragments are only needed when using Coupled Moves with the 
+    fragment KIC backbone mover (which is not the default).  The fragment KIC 
+    backbone mover is appropriate to use when lots of backbone movement is 
+    desired, so if your custom scaffold has a well-conserved backbone and you 
+    don't want a lot of movement, you can probably just skip this step.
+
   - Create an account on: https://old.robetta.org
   - Submit a "Fragment Library" job.
   - Upload the FASTA file created above.
@@ -244,21 +276,36 @@ most of it has to be done by hand.  Below is an outline of the basic steps:
       
 Custom design algorithms
 ========================
-- Most design algorithms take at least these arguments:
+If you'd like to implement your own design algorithm, here are the basic steps 
+you'll need to take:
 
-  - The path to a PDB model of the scaffold with the target NCAA in the binding 
-    site.  The model will have been relaxed in the Rosetta force field in the 
-    context of its native ligand.  The native ligand will have been replaced 
-    with the target ligand without any further optimization, so there may be 
-    severe clashes.  It is assumed that these clashes will be resolved by the 
-    design algorithm itself.
+- Write a script that runs the design algorithm, and add it to the ``bin/`` 
+  directory of this repository.  Scripts in this directory are automatically 
+  added to ``$PATH`` when the pipeline is running.
 
-  - The path to the Rosetta ligand parameter file for the target NCAA.  This 
-    file should be provided to Rosetta via the ``-extra_res_fa`` command line 
-    option.
+  - Most design scripts take at least these arguments:
 
-  - The path to (or name of) the scaffold.  The scaffold contains a number of 
-    default design parameters described in the section above.
+    - The path to a PDB model of the scaffold with the target NCAA in the binding 
+      site.  The model will have been relaxed in the Rosetta force field in the 
+      context of its native ligand.  The native ligand will have been replaced 
+      with the target ligand without any further optimization, so there may be 
+      severe clashes.  It is assumed that these clashes will be resolved by the 
+      design algorithm itself.
 
-  - `--dry-run` and `--debug-run` options; they're very useful for development.
+    - The path to the Rosetta ligand parameter file for the target NCAA.  This 
+      file should be provided to Rosetta via the ``-extra_res_fa`` command line 
+      option.
+
+    - The path to (or name of) the scaffold.  The scaffold contains a number of 
+      default design parameters described in the section above.
+
+    - ``--dry-run`` and ``--debug-run`` options; they're very useful for 
+      development.
+
+- Edit ``main.nf`` to invoke the script with the correct inputs and resource 
+  requirements.
+
+- Make a pull request!  I'd be more than happy to include any design algorithm 
+  in this project, since one of my main goals is to compare as many different 
+  algorithms as possible.
 
