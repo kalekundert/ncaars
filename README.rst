@@ -4,12 +4,13 @@ NCaaRS
 
 .. image:: https://img.shields.io/badge/nextflow-DSL2-informational
    :alt: Nextflow version
+   :target: https://www.nextflow.io/
 
 .. image:: https://img.shields.io/readthedocs/ncaars.svg
    :alt: Documentation
    :target: https://ncaars.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/github/workflow/status/kalekundert/ncaars/Test%20and%20release/master
+.. image:: https://img.shields.io/github/workflow/status/kalekundert/ncaars/Test/master
    :alt: Test status
    :target: https://github.com/kalekundert/ncaars/actions
 
@@ -17,11 +18,15 @@ NCaaRS
    :alt: Last commit
    :target: https://github.com/kalekundert/ncaars
 
-Notes
-=====
+NCaaRS is a computational pipeline for designing amino acid tRNA synthetases 
+(aaRS) to bind any non-canonical amino acid (NCAA) of interest.  The pipeline 
+includes several different design algorithms, all based on Rosetta.  Our goal 
+is to empirically test all of these algorithms, to (i) determine which ones 
+perform the best and (ii) learn how to write new algorithms that perfrom even 
+better.
 
 Installing the pipeline
------------------------
+=======================
 - Install nextflow
 
   - This is preinstalled on many clusters.
@@ -78,7 +83,7 @@ Installing the pipeline
       conda directory, and configuring nextflow to use those.
 
 Running the pipeline
---------------------
+====================
 - Make a ``nextflow.config`` file:
 
   - Specify which NCAA you want to design for::
@@ -136,7 +141,7 @@ Running the pipeline
     > eliot-tree log.json
 
 Custom scaffolds
-----------------
+================
 Preparing a custom scaffold for this pipeline takes a lot of setup work, and 
 most of it has to be done by hand.  Below is an outline of the basic steps:
 
@@ -238,7 +243,7 @@ most of it has to be done by hand.  Below is an outline of the basic steps:
   - You can use ``contrib/wget_robetta.sh`` to download the results.
       
 Custom design algorithms
-------------------------
+========================
 - Most design algorithms take at least these arguments:
 
   - The path to a PDB model of the scaffold with the target NCAA in the binding 
