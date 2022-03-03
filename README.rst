@@ -117,7 +117,7 @@ Running the pipeline
 
 - Run nextflow::
 
-    $ nextflow kalekundert/main.nf
+    $ nextflow kalekundert/ncaars
 
   There is no need to actually download this repository to run the pipeline.  
   The above command will instruct nextflow to automatically download and run 
